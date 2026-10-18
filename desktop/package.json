@@ -1,0 +1,48 @@
+{
+  "name": "smartnekam-desktop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Windows desktop shell for the existing SmartNekam web application",
+  "productName": "SmartNekam",
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "dist:win": "electron-builder --win nsis portable --x64",
+    "dist:installer": "electron-builder --win nsis --x64",
+    "dist:portable": "electron-builder --win portable --x64"
+  },
+  "devDependencies": {
+    "electron": "^44.9.0",
+    "electron-builder": "^26.17.0"
+  },
+  "build": {
+    "appId": "com.smartnekam.app",
+    "productName": "SmartNekam",
+    "directories": {
+      "output": "release",
+      "buildResources": "assets"
+    },
+    "files": [
+      "main.cjs",
+      "package.json",
+      "assets/**/*"
+    ],
+    "win": {
+      "icon": "assets/smartnekam.ico",
+      "target": [
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "SmartNekam"
+    },
+    "portable": {
+      "artifactName": "SmartNekam-Portable-${version}.${ext}"
+    }
+  }
+}
