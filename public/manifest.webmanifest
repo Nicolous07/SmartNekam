@@ -1,0 +1,20 @@
+{
+  "id": "/",
+  "name": "SmartNekam — Elimu, Jamii na Fursa",
+  "short_name": "SmartNekam",
+  "description": "Jukwaa la elimu, maktaba, jamii za shule na fursa kwa wanafunzi.",
+  "lang": "sw-TZ",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0B0F1A",
+  "theme_color": "#0B0F1A",
+  "icons": [
+    {
+      "src": "/images/smartnekam-mark.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
