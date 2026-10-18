@@ -1,0 +1,9 @@
+SmartNekam SQL Fix v7
+
+1. Open Supabase Dashboard > SQL Editor > New query.
+2. Clear the editor completely (Ctrl+A, Delete).
+3. Open SMARTNEKAM-INSTITUTION-DIRECTORY-FIX-V7.sql, copy the WHOLE file, paste it into the new query, then Run.
+4. Do not paste it after a previous unfinished query or select only a portion.
+
+The main change is that the UPDATE statements and bulk INSERT now run inside one DO block.
+This package has not been executed against your live Supabase database; schema/runtime validation still depends on the actual project.
