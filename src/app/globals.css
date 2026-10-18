@@ -1,0 +1,610 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* SmartNekam — Midnight Scholar design tokens. */
+:root {
+  color-scheme: light;
+  --sn-background: #F6F8FC;
+  --sn-surface: #FFFFFF;
+  --sn-surface-elevated: #FFFFFF;
+  --sn-text: #101728;
+  --sn-text-muted: #5B6577;
+  --sn-border: #DCE3F0;
+  --sn-primary: #4F7CFF;
+  --sn-secondary: #8B5CF6;
+  --sn-success: #22D3A6;
+  --sn-warning: #FFB020;
+  --sn-danger: #FF5C7A;
+
+  /* Existing emerald utility classes now map to SmartNekam's primary blue. */
+  --color-emerald-50: #EFF4FF;
+  --color-emerald-100: #E0E9FF;
+  --color-emerald-200: #C7D7FE;
+  --color-emerald-300: #A5BEFF;
+  --color-emerald-400: #7FA1FF;
+  --color-emerald-500: #4F7CFF;
+  --color-emerald-600: #4F7CFF;
+  --color-emerald-700: #3D62D9;
+  --color-emerald-800: #304EB1;
+  --color-emerald-900: #263F8F;
+  --color-emerald-950: #172653;
+
+  /* Teal = growth / verified / correct answers. */
+  --color-teal-50: #E8FFF8;
+  --color-teal-100: #C7FCEB;
+  --color-teal-200: #8EF5D8;
+  --color-teal-300: #5EEBC6;
+  --color-teal-400: #39DDB6;
+  --color-teal-500: #22D3A6;
+  --color-teal-600: #0CB98F;
+  --color-teal-700: #0B9475;
+  --color-teal-800: #0C735D;
+  --color-teal-900: #0D5C4C;
+  --color-teal-950: #04382F;
+
+  /* Orange = deadlines and urgency. */
+  --color-amber-50: #FFF8E8;
+  --color-amber-100: #FFECC2;
+  --color-amber-200: #FFDB85;
+  --color-amber-300: #FFCA52;
+  --color-amber-400: #FFB933;
+  --color-amber-500: #FFB020;
+  --color-amber-600: #E89707;
+  --color-amber-700: #BB7108;
+  --color-amber-800: #95580E;
+  --color-amber-900: #794710;
+  --color-amber-950: #452405;
+}
+
+@layer base {
+  html,
+  body {
+    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+    background-color: var(--sn-background);
+    color: var(--sn-text);
+    overflow-x: clip;
+    scroll-behavior: smooth;
+    transition: background-color 0.25s ease, color 0.25s ease;
+  }
+
+  html.dark,
+  html.dark body {
+    color-scheme: dark;
+    --sn-background: #0B0F1A;
+    --sn-surface: #121826;
+    --sn-surface-elevated: #1A2234;
+    --sn-text: #F4F6FB;
+    --sn-text-muted: #A7B0C4;
+    --sn-border: rgba(255, 255, 255, 0.08);
+    background-color: var(--sn-background);
+    color: var(--sn-text);
+  }
+
+  html.amoled,
+  html.amoled body {
+    --sn-background: #000000;
+    --sn-surface: #050505;
+    --sn-surface-elevated: #101010;
+    background-color: #000000;
+  }
+
+  h1, h2, h3, h4, h5, h6, .font-heading {
+    font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+    letter-spacing: -0.025em;
+  }
+
+  button, a, input, select, textarea {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+.dark {
+  color-scheme: dark;
+  --color-slate-950: #070A12;
+  --color-slate-900: #121826;
+  --color-slate-800: #1A2234;
+  --color-slate-700: #2A354B;
+  --color-slate-600: #56637B;
+  --color-slate-500: #8793AA;
+  --color-slate-400: #A7B0C4;
+  --color-slate-300: #CBD3E1;
+  --color-slate-200: #DFE5EF;
+  --color-slate-100: #F4F6FB;
+  --color-slate-50: #F9FAFD;
+}
+
+.amoled {
+  --color-slate-950: #000000;
+  --color-slate-900: #050505;
+  --color-slate-800: #101010;
+  --color-slate-700: #242424;
+  --color-slate-600: #4B4B4B;
+}
+
+.geometric-card {
+  background-color: var(--sn-surface);
+  border: 1px solid var(--sn-border);
+  border-radius: 1.25rem;
+  box-shadow: 0 1px 3px 0 rgba(35, 61, 120, 0.06), 0 1px 2px -1px rgba(15, 23, 42, 0.06);
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.dark .geometric-card {
+  background-color: #121826;
+  border-color: rgba(255, 255, 255, 0.07);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.20);
+}
+
+.amoled .geometric-card {
+  background-color: #050505;
+  border-color: #1E1E1E;
+  box-shadow: none;
+}
+
+.geometric-hero {
+  background: linear-gradient(135deg, #4F7CFF 0%, #6B67F5 48%, #8B5CF6 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.dark .geometric-hero {
+  background: linear-gradient(135deg, #17264D 0%, #20264D 48%, #302259 100%);
+}
+
+.glow-green {
+  box-shadow: 0 0 0 1px rgba(79, 124, 255, 0.24), 0 10px 40px -12px rgba(79, 124, 255, 0.34);
+}
+
+.sn-primary-gradient {
+  background-image: linear-gradient(115deg, #4F7CFF 0%, #6F68F5 52%, #8B5CF6 100%);
+}
+
+.sn-glass-surface {
+  background: rgba(18, 24, 38, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(18px);
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* =====================================================================
+   SMARTNEKAM ANIMATION SYSTEM
+   Madarasa yote yanaanza na "anim-", "reveal", "stagger" au "hover-lift"
+   ===================================================================== */
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.85); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes slideRight {
+  from { opacity: 0; transform: translateX(-32px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideLeft {
+  from { opacity: 0; transform: translateX(32px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes sheetUp {
+  from { opacity: 0; transform: translateY(40px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes floatY {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-10px); }
+}
+@keyframes kenBurns {
+  from { transform: scale(1); }
+  to   { transform: scale(1.08); }
+}
+@keyframes gradientShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes pulseRing {
+  0%   { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.55); }
+  70%  { box-shadow: 0 0 0 16px rgba(99, 102, 241, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+}
+
+.anim-fade-up    { animation: fadeUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) backwards; }
+.anim-fade-in    { animation: fadeIn 0.5s ease backwards; }
+.anim-scale-in   { animation: scaleIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) backwards; }
+.anim-slide-right{ animation: slideRight 0.7s cubic-bezier(0.22, 1, 0.36, 1) backwards; }
+.anim-slide-left { animation: slideLeft 0.7s cubic-bezier(0.22, 1, 0.36, 1) backwards; }
+.anim-sheet-up   { animation: sheetUp 0.35s cubic-bezier(0.22, 1, 0.36, 1) backwards; }
+.anim-float      { animation: floatY 5s ease-in-out infinite; }
+.anim-float-slow { animation: floatY 7s ease-in-out infinite; }
+.anim-ken-burns  { animation: kenBurns 18s ease-in-out infinite alternate; }
+.anim-pulse-ring { animation: pulseRing 2.4s infinite; }
+.anim-gradient {
+  background-size: 200% 200%;
+  animation: gradientShift 10s ease infinite;
+}
+
+/* Ucheleweshaji (delay) */
+.anim-delay-1 { animation-delay: 0.1s; }
+.anim-delay-2 { animation-delay: 0.2s; }
+.anim-delay-3 { animation-delay: 0.3s; }
+.anim-delay-4 { animation-delay: 0.4s; }
+.anim-delay-5 { animation-delay: 0.5s; }
+.anim-delay-6 { animation-delay: 0.6s; }
+
+/* Ukurasa unaingia kwa upole kila unapobadilisha route (template.tsx) */
+.page-enter { animation: fadeUp 0.45s cubic-bezier(0.22, 1, 0.36, 1) backwards; }
+
+/* Watoto wa kontena huingia mmoja baada ya mwingine */
+.stagger > * {
+  animation: fadeUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+.stagger > *:nth-child(1) { animation-delay: 0.05s; }
+.stagger > *:nth-child(2) { animation-delay: 0.15s; }
+.stagger > *:nth-child(3) { animation-delay: 0.25s; }
+.stagger > *:nth-child(4) { animation-delay: 0.35s; }
+.stagger > *:nth-child(5) { animation-delay: 0.45s; }
+.stagger > *:nth-child(n + 6) { animation-delay: 0.55s; }
+
+/* Reveal: inaonekana mtu anapo-scroll hadi kwenye sehemu hiyo (Reveal.tsx) */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* Kadi inayoinuka mouse ikipita juu (hiari, ongeza class "hover-lift") */
+.hover-lift {
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px -8px rgba(79, 70, 229, 0.28);
+  border-color: #a5b4fc;
+}
+
+/* Picha inayokuzwa kidogo mouse ikipita (zoom) */
+.img-zoom img {
+  transition: transform 0.6s ease;
+}
+.img-zoom:hover img {
+  transform: scale(1.06);
+}
+
+/* Heshimu watumiaji wanaozima animation kwenye simu/kompyuta zao */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---------- Onboarding & theme animations ---------- */
+@keyframes popIn {
+  0%   { opacity: 0; transform: scale(0.3); }
+  60%  { opacity: 1; transform: scale(1.15); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes spinIn {
+  from { opacity: 0; transform: rotate(-90deg) scale(0.4); }
+  to   { opacity: 1; transform: rotate(0) scale(1); }
+}
+@keyframes blobMove {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%      { transform: translate(30px, -20px) scale(1.1); }
+  66%      { transform: translate(-20px, 25px) scale(0.95); }
+}
+@keyframes confettiFall {
+  0%   { opacity: 1; transform: translateY(-20px) rotate(0deg); }
+  100% { opacity: 0; transform: translateY(420px) rotate(720deg); }
+}
+
+.anim-pop       { animation: popIn 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) backwards; }
+.anim-spin-in   { animation: spinIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) backwards; }
+.anim-blob      { animation: blobMove 14s ease-in-out infinite; }
+.anim-blob-slow { animation: blobMove 20s ease-in-out infinite reverse; }
+
+.confetti-piece {
+  position: absolute;
+  top: 0;
+  border-radius: 2px;
+  opacity: 0;
+  animation: confettiFall 3s ease-in forwards;
+  pointer-events: none;
+}
+
+/* Ficha scrollbar zote (kurasa bado zinasogea kawaida) */
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+*::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* Light appearance support for the cinematic Auth screen. */
+html:not(.dark) .auth-screen {
+  color: #101728;
+  background: #F6F8FC;
+}
+html:not(.dark) .auth-screen .auth-image-overlay {
+  background: linear-gradient(to bottom, rgba(246, 248, 252, 0.76), rgba(246, 248, 252, 0.84) 52%, rgba(246, 248, 252, 0.96));
+}
+html:not(.dark) .auth-screen .auth-color-overlay {
+  background: rgba(79, 124, 255, 0.05);
+  mix-blend-mode: normal;
+}
+html:not(.dark) .auth-screen .auth-card {
+  background: rgba(255, 255, 255, 0.84);
+  border-color: rgba(79, 124, 255, 0.22);
+  box-shadow: 0 24px 70px rgba(40, 65, 120, 0.14);
+  backdrop-filter: blur(18px);
+}
+html:not(.dark) .auth-screen .auth-input-wrap {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: #DCE3F0;
+}
+html:not(.dark) .auth-screen .auth-input {
+  color: #101728;
+}
+html:not(.dark) .auth-screen .text-slate-300,
+html:not(.dark) .auth-screen .text-slate-400 {
+  color: #5B6577;
+}
+html:not(.dark) .auth-screen .text-emerald-300 {
+  color: #304EB1;
+}
+html:not(.dark) .auth-screen .border-white\/15 {
+  border-color: #DCE3F0;
+}
+html:not(.dark) .auth-screen input,
+html:not(.dark) .auth-screen textarea,
+html:not(.dark) .auth-screen select {
+  color: #101728;
+  border-color: #DCE3F0;
+}
+html:not(.dark) .auth-screen input::placeholder,
+html:not(.dark) .auth-screen textarea::placeholder {
+  color: #737F92;
+}
+html:not(.dark) .auth-screen [class~="bg-[#121826]"] {
+  background-color: #FFFFFF !important;
+}
+
+html.amoled,
+html.amoled body {
+  background-color: #000000;
+}
+
+/* The floating mobile navigation follows the active theme while retaining glass depth. */
+html:not(.dark) nav[aria-label="Urambazaji wa simu"] > div {
+  background: rgba(255, 255, 255, 0.88) !important;
+  border-color: rgba(16, 23, 40, 0.09) !important;
+  box-shadow: 0 14px 38px rgba(38, 57, 94, 0.16) !important;
+}
+html:not(.dark) nav[aria-label="Urambazaji wa simu"] a {
+  color: #5B6577 !important;
+}
+html:not(.dark) nav[aria-label="Urambazaji wa simu"] a[class*="text-[#4F7CFF]"] {
+  color: #3D62D9 !important;
+}
+html:not(.dark) nav[aria-label="Urambazaji wa simu"] a .sn-primary-gradient {
+  color: #FFFFFF !important;
+}
+html:not(.dark) nav[aria-label="Urambazaji wa simu"] button {
+  --tw-ring-color: #FFFFFF;
+}
+html:not(.dark) .auth-screen .bg-emerald-950 {
+  background-color: #E0E9FF;
+}
+html.amoled .auth-screen {
+  background: #000000;
+}
+html.amoled [class~="bg-[#0B0F1A]"],
+html.amoled [class~="dark:bg-[#0B0F1A]"] {
+  background-color: #000000 !important;
+}
+html.amoled [class~="bg-[#121826]"],
+html.amoled [class~="dark:bg-[#121826]"] {
+  background-color: #050505 !important;
+}
+
+html:not(.dark) .auth-screen [class~="bg-[#121826]"] {
+  background-color: #FFFFFF !important;
+}
+
+/* Midnight Scholar navigation rail: active destinations float above the pill. */
+:root {
+  --sn-nav-rail-bg: rgba(246, 248, 252, 0.94);
+  --sn-nav-rail-border: rgba(16, 23, 40, 0.10);
+  --sn-nav-muted: #667085;
+}
+html.dark {
+  --sn-nav-rail-bg: rgba(18, 24, 38, 0.96);
+  --sn-nav-rail-border: rgba(255, 255, 255, 0.08);
+  --sn-nav-muted: #A7B0C4;
+}
+html.amoled {
+  --sn-nav-rail-bg: rgba(5, 5, 5, 0.97);
+  --sn-nav-rail-border: rgba(255, 255, 255, 0.10);
+  --sn-nav-muted: #929292;
+}
+.sn-nav-rail {
+  background: var(--sn-nav-rail-bg);
+  border: 1px solid var(--sn-nav-rail-border);
+  backdrop-filter: blur(22px) saturate(150%);
+  -webkit-backdrop-filter: blur(22px) saturate(150%);
+  transition: background-color 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+}
+.sn-nav-desktop-item {
+  position: relative;
+  display: inline-flex;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: var(--sn-nav-muted);
+  transition: transform 220ms ease, color 220ms ease, background-color 220ms ease, box-shadow 220ms ease;
+}
+.sn-nav-desktop-item:hover {
+  color: var(--sn-text);
+  background: rgba(79, 124, 255, 0.10);
+}
+.sn-nav-desktop-item.is-active {
+  z-index: 2;
+  transform: translateY(-8px);
+  background: linear-gradient(125deg, #4F7CFF 0%, #6F68F5 54%, #8B5CF6 100%);
+  color: #FFFFFF;
+  box-shadow: 0 0 0 5px var(--sn-nav-rail-bg), 0 9px 26px rgba(79, 124, 255, 0.30);
+}
+.sn-nav-desktop-item.is-active:hover {
+  color: #FFFFFF;
+  filter: brightness(1.06);
+}
+.sn-mobile-nav-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  height: 74px;
+  align-items: center;
+  gap: 0;
+  padding: 0 6px;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.28);
+}
+.sn-mobile-nav-item {
+  position: relative;
+  display: flex;
+  height: 66px;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 15px;
+  color: var(--sn-nav-muted);
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.sn-mobile-nav-icon {
+  position: absolute;
+  top: 7px;
+  left: 50%;
+  display: flex;
+  width: 35px;
+  height: 35px;
+  transform: translateX(-50%);
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: inherit;
+  transition: top 220ms ease, width 220ms ease, height 220ms ease, box-shadow 220ms ease, background-color 220ms ease;
+}
+.sn-mobile-nav-label {
+  position: absolute;
+  bottom: 5px;
+  left: 0;
+  right: 0;
+  overflow: hidden;
+  padding-inline: 1px;
+  color: inherit;
+  font-size: 8px;
+  font-weight: 800;
+  line-height: 1;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sn-mobile-nav-item.is-active {
+  color: var(--sn-text);
+}
+.sn-mobile-nav-item.is-active .sn-mobile-nav-icon {
+  top: -15px;
+  width: 42px;
+  height: 42px;
+  background: linear-gradient(125deg, #4F7CFF 0%, #6F68F5 54%, #8B5CF6 100%);
+  color: #FFFFFF !important;
+  box-shadow: 0 0 0 6px var(--sn-nav-rail-bg), 0 8px 24px rgba(79, 124, 255, 0.34);
+}
+.sn-mobile-nav-item.is-active .sn-mobile-nav-label {
+  color: var(--sn-text);
+}
+.sn-mobile-nav-create .sn-mobile-nav-icon {
+  top: -11px;
+  width: 39px;
+  height: 39px;
+  background: linear-gradient(125deg, #4F7CFF 0%, #6F68F5 54%, #8B5CF6 100%);
+  color: #FFFFFF;
+  box-shadow: 0 0 0 5px var(--sn-nav-rail-bg), 0 8px 24px rgba(79, 124, 255, 0.30);
+}
+.sn-mobile-nav-create .sn-mobile-nav-label {
+  color: var(--sn-nav-muted);
+}
+@media (max-width: 360px) {
+  .sn-mobile-nav-grid { padding-inline: 3px; }
+  .sn-mobile-nav-label { font-size: 7px; }
+  .sn-mobile-nav-icon { width: 32px; height: 32px; }
+  .sn-mobile-nav-item.is-active .sn-mobile-nav-icon { width: 39px; height: 39px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sn-nav-desktop-item,
+  .sn-mobile-nav-icon { transition: none !important; }
+}
+
+
+/* Notification toast appears at the top and expires after 3 seconds. */
+.sn-toast-progress {
+  height: 3px;
+  width: 100%;
+  transform-origin: left center;
+  background: linear-gradient(90deg, #22d3a6, #4f7cff, #8b5cf6);
+  animation: sn-toast-progress 3s linear forwards;
+}
+@keyframes sn-toast-progress { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+.sn-horizontal-rail {
+  display: flex;
+  flex-wrap: nowrap;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto !important;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 0.5rem;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x pan-y;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(16, 185, 129, .52) transparent;
+}
+.sn-horizontal-rail > * { flex-shrink: 0; }
+.sn-horizontal-rail::-webkit-scrollbar { height: 5px; }
+.sn-horizontal-rail::-webkit-scrollbar-thumb { background: rgba(16, 185, 129, .5); border-radius: 999px; }
+.sn-horizontal-rail::-webkit-scrollbar-track { background: transparent; }
+.sn-horizontal-rail:focus-visible { outline: 2px solid #10b981; outline-offset: 2px; }
