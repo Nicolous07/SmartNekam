@@ -54,6 +54,11 @@ Kama kuunda Chat Groups kupitia Chats kunashindwa baada ya SQL 017, endesha `020
 
 See `UPGRADE-021-SETUP-SW.md` for the group creation ambiguity fix, group member invites, and post follow feature. If SQL 001–020 already ran successfully, apply only `021_smartnekam_group_members_follow_navigation.sql`.
 
+
+## Admin Learn & Sponsored Posts — SQL 046
+
+Soma `UPGRADE-046-ADMIN-LEARN-PROMOTIONS-SW.md`. Baada ya schema iliyopo kukamilika, endesha `sql/046_smartnekam_admin_learning_promotions.sql` kwenye Supabase SQL Editor ili kuwezesha Learn Content Studio na udhibiti wa pinned/sponsored posts.
+
 ## Tanzania institution directory
 
 Run SQL 023 after SQL 022, then follow `UPGRADE-023-TANZANIA-INSTITUTIONS-SW.md`. The local `npm run institutions:sync` script pulls public official directories, deduplicates them and upserts schools and tertiary institutions to Supabase. It requires a local `SUPABASE_SERVICE_ROLE_KEY`; never expose that key in client code or commit it.
