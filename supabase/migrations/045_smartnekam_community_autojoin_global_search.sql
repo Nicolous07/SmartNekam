@@ -508,6 +508,18 @@ CREATE INDEX IF NOT EXISTS live_sessions_global_search_idx
   ON public.live_sessions USING gin (pg_catalog.to_tsvector('simple'::regconfig,
     pg_catalog.coalesce(title, '') || ' ' || pg_catalog.coalesce(description, '')));
 
+CREATE INDEX IF NOT EXISTS course_modules_global_search_idx
+  ON public.course_modules USING gin (pg_catalog.to_tsvector('simple'::regconfig,
+    pg_catalog.coalesce(title, '') || ' ' || pg_catalog.coalesce(description, '')));
+CREATE INDEX IF NOT EXISTS course_lessons_global_search_idx
+  ON public.course_lessons USING gin (pg_catalog.to_tsvector('simple'::regconfig,
+    pg_catalog.coalesce(title, '') || ' ' || pg_catalog.coalesce(description, '') || ' ' ||
+    pg_catalog.coalesce(content, '') || ' ' || pg_catalog.coalesce(lesson_type, '')));
+CREATE INDEX IF NOT EXISTS study_channels_global_search_idx
+  ON public.study_channels USING gin (pg_catalog.to_tsvector('simple'::regconfig,
+    pg_catalog.coalesce(slug, '') || ' ' || pg_catalog.coalesce(title, '') || ' ' ||
+    pg_catalog.coalesce(description, '') || ' ' || pg_catalog.coalesce(level, '')));
+
 -- ---------------------------------------------------------------------------
 -- 7. One global search RPC. Existing search categories remain intact. Additional
 -- results include public feed posts/replies, official institutions, visible
@@ -827,6 +839,67 @@ AS $function$
       AND pg_catalog.to_tsvector('simple'::regconfig,
           pg_catalog.coalesce(l.title, '') || ' ' ||
           pg_catalog.coalesce(l.description, '')) @@ i.tsq
+
+    UNION ALL
+
+    -- Search lesson text only where the current caller's RLS policy lets them
+    -- read the lesson (published preview, active enrolment, owner or moderator).
+    SELECT
+      'course_lessons'::text,
+      l.course_id,
+      coalesce(NULLIF(c.title, ''), l.title)::text,
+      pg_catalog.left(pg_catalog.concat_ws(' · ', l.title, l.description, l.content), 240)::text,
+      c.level::text,
+      l.created_at,
+      pg_catalog.ts_rank_cd(
+        pg_catalog.to_tsvector('simple'::regconfig,
+          pg_catalog.coalesce(c.title, '') || ' ' ||
+          pg_catalog.coalesce(l.title, '') || ' ' ||
+          pg_catalog.coalesce(l.description, '') || ' ' ||
+          pg_catalog.coalesce(l.content, '') || ' ' ||
+          pg_catalog.coalesce(l.lesson_type, '')), i.tsq
+      )::real,
+      NULL::boolean
+    FROM public.course_lessons l
+    JOIN public.courses c ON c.id = l.course_id
+    CROSS JOIN input i
+    WHERE pg_catalog.char_length(i.needle) >= 2 AND i.tsq IS NOT NULL
+      AND (p_type IS NULL OR p_type = 'course_lessons')
+      AND l.status = 'published'
+      AND c.status = 'published'
+      AND pg_catalog.to_tsvector('simple'::regconfig,
+          pg_catalog.coalesce(c.title, '') || ' ' ||
+          pg_catalog.coalesce(l.title, '') || ' ' ||
+          pg_catalog.coalesce(l.description, '') || ' ' ||
+          pg_catalog.coalesce(l.content, '') || ' ' ||
+          pg_catalog.coalesce(l.lesson_type, '')) @@ i.tsq
+
+    UNION ALL
+
+    SELECT
+      'study_channels'::text,
+      ch.id,
+      ch.title::text,
+      pg_catalog.left(pg_catalog.concat_ws(' · ', ch.description, ch.level), 240)::text,
+      ch.level::text,
+      ch.created_at,
+      pg_catalog.ts_rank_cd(
+        pg_catalog.to_tsvector('simple'::regconfig,
+          pg_catalog.coalesce(ch.slug, '') || ' ' ||
+          pg_catalog.coalesce(ch.title, '') || ' ' ||
+          pg_catalog.coalesce(ch.description, '') || ' ' ||
+          pg_catalog.coalesce(ch.level, '')), i.tsq
+      )::real,
+      NULL::boolean
+    FROM public.study_channels ch
+    CROSS JOIN input i
+    WHERE pg_catalog.char_length(i.needle) >= 2 AND i.tsq IS NOT NULL
+      AND (p_type IS NULL OR p_type = 'study_channels')
+      AND pg_catalog.to_tsvector('simple'::regconfig,
+          pg_catalog.coalesce(ch.slug, '') || ' ' ||
+          pg_catalog.coalesce(ch.title, '') || ' ' ||
+          pg_catalog.coalesce(ch.description, '') || ' ' ||
+          pg_catalog.coalesce(ch.level, '')) @@ i.tsq
   ),
   combined AS (
     SELECT * FROM base_results
