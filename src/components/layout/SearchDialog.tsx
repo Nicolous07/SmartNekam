@@ -31,6 +31,8 @@ const icons: Record<string, typeof BookOpen> = {
   mentors: UserRound,
   community_events: CalendarDays,
   live_sessions: CalendarDays,
+  course_lessons: BookOpen,
+  study_channels: Users,
 }
 const typeLabels: Record<string, string> = {
   notes: 'Notes', past_papers: 'Past paper', study_groups: 'Study group',
@@ -39,18 +41,20 @@ const typeLabels: Record<string, string> = {
   institution_communities: 'Shule / Chuo na jamii rasmi',
   posts: 'Post ya Home Feed', mentors: 'Mentor',
   community_events: 'Tukio', live_sessions: 'Live session',
+  course_lessons: 'Somo la kozi', study_channels: 'Channel ya somo',
 }
 function hrefFor(r: Result) {
   if (r.result_type === 'notes' || r.result_type === 'past_papers') return `/library/${r.result_id}?type=${r.result_type}`
   if (r.result_type === 'study_groups') return `/communities/room/${r.result_id}`
   if (r.result_type === 'questions') return `/communities/questions/${r.result_id}`
-  if (r.result_type === 'courses') return `/learn/${r.result_id}`
+  if (r.result_type === 'courses' || r.result_type === 'course_lessons') return `/learn/${r.result_id}`
   if (r.result_type === 'opportunities') return `/opportunities/${r.result_id}`
   if (r.result_type === 'universities' || r.result_type === 'university_programmes') return '/opportunities?tab=universities'
   if (r.result_type === 'institution_communities') return `/communities/institution/${r.result_id}?kind=${r.level === 'SCHOOL' ? 'school' : 'tertiary'}`
   if (r.result_type === 'posts') return `/posts/${r.result_id}`
   if (r.result_type === 'mentors') return '/communities?tab=mentors'
   if (r.result_type === 'community_events' || r.result_type === 'live_sessions') return '/communities?tab=events'
+  if (r.result_type === 'study_channels') return '/communities?tab=channels'
   return '/dashboard'
 }
 
