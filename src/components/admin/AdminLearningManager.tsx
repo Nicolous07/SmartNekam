@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import type { FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { BookOpen, Layers3, Loader2, Plus, Video } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -37,7 +38,7 @@ export default function AdminLearningManager({ courses }: { courses: CourseOptio
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
-  async function submit(event: React.FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setBusy(true)
     setError('')
