@@ -49,14 +49,34 @@ function InstitutionAndGroupsDiscovery({ schools, universities, groups }: { scho
 export default async function PostFeed() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  const [feedResult, peopleResult, schoolsResult, universitiesResult, groupsResult] = await Promise.all([
+  const [feedResult, peopleResult, schoolsResult, universitiesResult, groupsResult, promotionsResult] = await Promise.all([
     supabase.from('posts_feed').select('id, author_id, category, subject, content, image_url, created_at, author_name, author_username, author_avatar, author_role, like_count, comment_count, share_count, liked_by_me, is_anonymous, attachments, author_follower_count, following_author_by_me').order('created_at', { ascending: false }).limit(20),
     user ? supabase.rpc('get_suggested_smartnekam_users', { p_limit: 6 }) : Promise.resolve({ data: [], error: null }),
     supabase.from('schools').select('id,name,region,country').order('name').limit(3),
     supabase.from('universities').select('id,name,region,country').order('name').limit(2),
     supabase.from('study_groups').select('id,name,description,level,member_count,subject_id').eq('status','active').eq('privacy','public').is('school_id',null).is('university_id',null).order('member_count',{ascending:false}).limit(3),
+    supabase.rpc('get_active_smartnekam_promotions'),
   ])
-  const posts = (feedResult.data ?? []) as FeedPost[]
+  const basePosts = (feedResult.data ?? []) as FeedPost[]
+  const promotionRows = (promotionsResult.data ?? []) as { post_id: string; is_pinned: boolean; is_sponsored: boolean; promotion_label: string | null; promoted_until: string | null }[]
+  let pinnedPosts: FeedPost[] = []
+  if (promotionRows.length) {
+    const { data: pinnedData } = await supabase.from('posts_feed')
+      .select('id, author_id, category, subject, content, image_url, created_at, author_name, author_username, author_avatar, author_role, like_count, comment_count, share_count, liked_by_me, is_anonymous, attachments, author_follower_count, following_author_by_me')
+      .in('id', promotionRows.map((row) => row.post_id))
+    pinnedPosts = (pinnedData ?? []) as FeedPost[]
+  }
+  const promotionById = new Map(promotionRows.map((row) => [row.post_id, row]))
+  const allPostsById = new Map<string, FeedPost>()
+  for (const post of [...basePosts, ...pinnedPosts]) {
+    const promo = promotionById.get(post.id)
+    allPostsById.set(post.id, promo ? { ...post, is_pinned: promo.is_pinned, is_sponsored: promo.is_sponsored, promotion_label: promo.promotion_label, promoted_until: promo.promoted_until } : post)
+  }
+  const posts = [...allPostsById.values()].sort((a, b) => {
+    const pinnedDifference = Number(Boolean(b.is_pinned)) - Number(Boolean(a.is_pinned))
+    if (pinnedDifference) return pinnedDifference
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  })
   const people = (peopleResult.data ?? []) as SuggestedUser[]
   const schools = (schoolsResult.data ?? []) as Institution[]
   const universities = (universitiesResult.data ?? []) as Institution[]
