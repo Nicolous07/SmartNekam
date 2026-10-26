@@ -78,7 +78,7 @@ BEGIN
   WHERE p.id = v_user_id;
 
   IF v_account_status IS DISTINCT FROM 'active'
-     OR v_role NOT IN ('moderator', 'super_admin') THEN
+     OR COALESCE(v_role, '') NOT IN ('moderator', 'super_admin') THEN
     RAISE EXCEPTION 'Ni moderator au super admin mwenye akaunti active pekee anayeruhusiwa kusimamia Learn.' USING ERRCODE = '42501';
   END IF;
 
