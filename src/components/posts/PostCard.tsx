@@ -116,9 +116,11 @@ export default function PostCard({
   const [liked, setLiked] = useState(post.liked_by_me)
   const [likes, setLikes] = useState(post.like_count)
   const [likeBusy, setLikeBusy] = useState(false)
+  const [likeError, setLikeError] = useState('')
 
   const [shares, setShares] = useState(post.share_count)
   const [copied, setCopied] = useState(false)
+  const [shareError, setShareError] = useState('')
   const [followingAuthor, setFollowingAuthor] = useState(Boolean(post.following_author_by_me))
   const [followerCount, setFollowerCount] = useState(Number(post.author_follower_count ?? 0))
   const [followBusy, setFollowBusy] = useState(false)
@@ -136,15 +138,25 @@ export default function PostCard({
 
   async function loadComments() {
     setLoadingComments(true)
-    const { data } = await supabase
-      .from('post_comments_feed')
-      .select('id, post_id, parent_comment_id, content, created_at, author_name, author_username, author_avatar')
-      .eq('post_id', post.id)
-      .order('created_at', { ascending: true })
-      .limit(100)
-    setComments((data ?? []) as FeedComment[])
-    setLoaded(true)
-    setLoadingComments(false)
+    setCommentError('')
+    try {
+      const { data, error } = await supabase
+        .from('post_comments_feed')
+        .select('id, post_id, parent_comment_id, content, created_at, author_name, author_username, author_avatar')
+        .eq('post_id', post.id)
+        .order('created_at', { ascending: true })
+        .limit(100)
+      if (error) {
+        setCommentError(`Imeshindikana kupakia comments: ${error.message}`)
+      } else {
+        setComments((data ?? []) as FeedComment[])
+        setLoaded(true)
+      }
+    } catch (error) {
+      setCommentError(error instanceof Error ? error.message : 'Imeshindikana kupakia comments.')
+    } finally {
+      setLoadingComments(false)
+    }
   }
 
   // Ikiwa post ilifunguliwa na comments wazi (ukurasa wa post moja)
@@ -162,91 +174,120 @@ export default function PostCard({
   async function toggleLike() {
     if (likeBusy) return
     setLikeBusy(true)
+    setLikeError('')
     const next = !liked
-    // Badilisha mara moja (optimistic), rudisha ikishindikana
     setLiked(next)
-    setLikes((n) => n + (next ? 1 : -1))
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    let failed = !user
-    if (user) {
-      const res = next
+    setLikes((n) => Math.max(0, n + (next ? 1 : -1)))
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError || !user) throw new Error('Ingia tena kwenye SmartNekam ili kuweka Like.')
+      const result = next
         ? await supabase.from('post_likes').insert({ post_id: post.id })
         : await supabase.from('post_likes').delete().eq('post_id', post.id).eq('user_id', user.id)
-      failed = Boolean(res.error && res.error.code !== '23505')
-    }
-    if (failed) {
+      if (result.error && !(next && result.error.code === '23505')) throw result.error
+      if (next && result.error?.code === '23505') {
+        // Like already exists in the database; keep the button in the liked state.
+      }
+    } catch (error) {
       setLiked(!next)
-      setLikes((n) => n + (next ? -1 : 1))
+      setLikes((n) => Math.max(0, n + (next ? -1 : 1)))
+      setLikeError(error instanceof Error ? error.message : 'Imeshindikana kuhifadhi Like.')
+    } finally {
+      setLikeBusy(false)
     }
-    setLikeBusy(false)
   }
 
   async function submitComment() {
-    const content = text.trim()
-    if (!content || sending) return
+    const commentContent = text.trim()
+    if (!commentContent || sending) return
     setSending(true)
     setCommentError('')
-    const { error } = await supabase.from('post_comments').insert({ post_id: post.id, content, parent_comment_id: replyTo?.id ?? null })
-    if (error) {
-      setCommentError('Imeshindikana kutuma comment. Jaribu tena.')
-    } else {
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError || !user) throw new Error('Ingia tena kwenye SmartNekam ili kutuma comment.')
+      const { error } = await supabase.from('post_comments').insert({
+        post_id: post.id,
+        content: commentContent,
+        parent_comment_id: replyTo?.id ?? null,
+      })
+      if (error) throw error
       setText('')
       setReplyTo(null)
       setCommentCount((n) => n + 1)
       await loadComments()
+    } catch (error) {
+      setCommentError(error instanceof Error ? `Imeshindikana kutuma comment: ${error.message}` : 'Imeshindikana kutuma comment.')
+    } finally {
+      setSending(false)
     }
-    setSending(false)
   }
 
   async function toggleFollowAuthor() {
-    if (!viewerId || !post.author_id || post.author_id === viewerId || followBusy) return
-    const next = !followingAuthor
-    setFollowingAuthor(next)
-    setFollowerCount((count) => Math.max(0, count + (next ? 1 : -1)))
+    if (!post.author_id || followBusy) return
     setFollowBusy(true)
     setFollowError('')
-    const result = next
-      ? await supabase.from('user_follows').insert({ follower_id: viewerId, following_id: post.author_id })
-      : await supabase.from('user_follows').delete().eq('follower_id', viewerId).eq('following_id', post.author_id)
-    if (result.error && !(next && result.error.code === '23505')) {
+    const next = !followingAuthor
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError || !user) throw new Error('Ingia tena kwenye SmartNekam ili kufuatilia mtumiaji.')
+      if (post.author_id === user.id) throw new Error('Huwezi kujifuata mwenyewe.')
+      setFollowingAuthor(next)
+      setFollowerCount((count) => Math.max(0, count + (next ? 1 : -1)))
+      const result = next
+        ? await supabase.from('user_follows').insert({ follower_id: user.id, following_id: post.author_id })
+        : await supabase.from('user_follows').delete().eq('follower_id', user.id).eq('following_id', post.author_id)
+      if (result.error && !(next && result.error.code === '23505')) throw result.error
+    } catch (error) {
       setFollowingAuthor(!next)
       setFollowerCount((count) => Math.max(0, count + (next ? -1 : 1)))
-      setFollowError('Imeshindikana kufuatilia mtumiaji. Hakikisha SQL 021 imeendeshwa.')
+      const message = error instanceof Error ? error.message : 'Kosa lisilojulikana.'
+      setFollowError(message.includes('user_follows') || message.includes('relation')
+        ? 'Jedwali user_follows halipo. Endesha SQL 021 kwenye Supabase SQL Editor.'
+        : `Imeshindikana kufuatilia mtumiaji: ${message}`)
+    } finally {
+      setFollowBusy(false)
     }
-    setFollowBusy(false)
   }
 
   async function sharePost() {
     const url = `${window.location.origin}/posts/${post.id}`
+    setShareError('')
     let shared = false
     let shareMethod: 'native' | 'copy' = 'copy'
     const shareApi = (navigator as unknown as { share?: (data: ShareData) => Promise<void> }).share
     try {
       if (typeof shareApi === 'function') {
-        await shareApi.call(navigator, {
-          title: `${authorName} kwenye SmartNekam`,
-          text: post.content.slice(0, 120),
-          url,
-        })
-        shareMethod = 'native'
-        shared = true
+        try {
+          await shareApi.call(navigator, {
+            title: `${authorName} kwenye SmartNekam`,
+            text: post.content.slice(0, 120),
+            url,
+          })
+          shareMethod = 'native'
+          shared = true
+        } catch (nativeError) {
+          if (nativeError instanceof Error && nativeError.name === 'AbortError') return
+          // If native sharing is unavailable or fails, fall back to copying the link.
+          await navigator.clipboard.writeText(url)
+          shareMethod = 'copy'
+          shared = true
+          setCopied(true)
+          window.setTimeout(() => setCopied(false), 2000)
+        }
       } else {
         await navigator.clipboard.writeText(url)
         shareMethod = 'copy'
         shared = true
         setCopied(true)
-        setTimeout(() => setCopied(false), 2000)
+        window.setTimeout(() => setCopied(false), 2000)
       }
-    } catch {
-      // mtumiaji alighairi kushiriki
-    }
-    if (shared) {
-      const { error } = await supabase.from('post_shares').insert({ post_id: post.id, share_method: shareMethod })
-      if (!error) setShares((n) => n + 1)
+      if (shared) {
+        const { error } = await supabase.from('post_shares').insert({ post_id: post.id, share_method: shareMethod })
+        if (error) setShareError(`Link imeshirikiwa, lakini rekodi ya share haikuhifadhiwa: ${error.message}`)
+        else setShares((n) => n + 1)
+      }
+    } catch (error) {
+      setShareError(error instanceof Error ? `Imeshindikana kushare: ${error.message}` : 'Imeshindikana kushare post.')
     }
   }
 
@@ -325,6 +366,8 @@ export default function PostCard({
         <img src={post.image_url} alt="Picha ya post" loading="lazy" className="mt-3 max-h-96 w-full rounded-2xl object-cover" />
       ) : null}
 
+      {likeError && <p role="status" className="mb-2 text-[11px] text-red-600 dark:text-red-300">{likeError}</p>}
+      {shareError && <p role="status" className="mb-2 break-words text-[11px] text-red-600 dark:text-red-300">{shareError}</p>}
       {/* Vitendo: Like, Comment, Share, Follow */}
       <div className="mt-3 flex items-center gap-1 border-t border-emerald-100 pt-2 dark:border-slate-800">
         <button
