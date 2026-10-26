@@ -87,7 +87,7 @@ BEGIN
     RAISE EXCEPTION 'Jaza jina la module na jina la lesson.' USING ERRCODE = '22023';
   END IF;
 
-  IF p_lesson_type NOT IN ('text', 'video') THEN
+  IF p_lesson_type IS NULL OR p_lesson_type NOT IN ('text', 'video') THEN
     RAISE EXCEPTION 'Lesson type haikubaliki.' USING ERRCODE = '22023';
   END IF;
   IF p_lesson_type = 'video'
@@ -123,7 +123,7 @@ BEGIN
     )
     VALUES (
       v_course_title,
-      NULLIF(pg_catalog.btrim(COALESCE(p_description, '')), ''),
+      COALESCE(NULLIF(pg_catalog.btrim(COALESCE(p_description, '')), ''), ''),
       p_level,
       p_language,
       p_access_type,
