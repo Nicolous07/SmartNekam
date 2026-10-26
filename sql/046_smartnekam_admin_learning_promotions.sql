@@ -238,7 +238,7 @@ BEGIN
   FROM public.profiles p WHERE p.id = v_user_id;
 
   IF v_user_id IS NULL OR v_account_status IS DISTINCT FROM 'active'
-     OR v_role NOT IN ('moderator', 'super_admin') THEN
+     OR COALESCE(v_role, '') NOT IN ('moderator', 'super_admin') THEN
     RAISE EXCEPTION 'Huna ruhusa ya kusimamia posts.' USING ERRCODE = '42501';
   END IF;
 
@@ -295,11 +295,11 @@ BEGIN
   FROM public.profiles p WHERE p.id = v_user_id;
 
   IF v_user_id IS NULL OR v_account_status IS DISTINCT FROM 'active'
-     OR v_role NOT IN ('moderator', 'super_admin') THEN
+     OR COALESCE(v_role, '') NOT IN ('moderator', 'super_admin') THEN
     RAISE EXCEPTION 'Huna ruhusa ya kupin posts.' USING ERRCODE = '42501';
   END IF;
 
-  IF COALESCE(p_is_sponsored, false) AND v_role <> 'super_admin' THEN
+  IF COALESCE(p_is_sponsored, false) AND COALESCE(v_role, '') <> 'super_admin' THEN
     RAISE EXCEPTION 'Ni Super Admin pekee anayeweza kuthibitisha na kuweka matangazo yaliyolipiwa.' USING ERRCODE = '42501';
   END IF;
 
