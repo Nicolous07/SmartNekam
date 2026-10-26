@@ -877,6 +877,33 @@ AS $function$
     UNION ALL
 
     SELECT
+      'courses'::text,
+      m.course_id,
+      c.title::text,
+      pg_catalog.left(pg_catalog.concat_ws(' · ', m.title, m.description), 240)::text,
+      c.level::text,
+      m.created_at,
+      pg_catalog.ts_rank_cd(
+        pg_catalog.to_tsvector('simple'::regconfig,
+          COALESCE(c.title, '') || ' ' ||
+          COALESCE(m.title, '') || ' ' ||
+          COALESCE(m.description, '')), i.tsq
+      )::real,
+      NULL::boolean
+    FROM public.course_modules m
+    JOIN public.courses c ON c.id = m.course_id
+    CROSS JOIN input i
+    WHERE pg_catalog.char_length(i.needle) >= 2 AND i.tsq IS NOT NULL
+      AND (p_type IS NULL OR p_type = 'courses')
+      AND c.status = 'published'
+      AND pg_catalog.to_tsvector('simple'::regconfig,
+          COALESCE(c.title, '') || ' ' ||
+          COALESCE(m.title, '') || ' ' ||
+          COALESCE(m.description, '')) @@ i.tsq
+
+    UNION ALL
+
+    SELECT
       'study_channels'::text,
       ch.id,
       ch.title::text,
