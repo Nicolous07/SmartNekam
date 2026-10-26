@@ -483,44 +483,13 @@ REVOKE ALL ON FUNCTION public.join_smartnekam_institution_community(uuid) FROM P
 GRANT EXECUTE ON FUNCTION public.join_smartnekam_institution_community(uuid) TO authenticated;
 
 -- ---------------------------------------------------------------------------
--- 6. Full-text search indexes for published public-facing content.
--- Private direct messages, private group messages, and vault files are excluded.
--- ---------------------------------------------------------------------------
-CREATE INDEX IF NOT EXISTS posts_global_search_idx
-  ON public.posts USING gin (pg_catalog.to_tsvector('simple'::regconfig,
-    COALESCE(subject, '') || ' ' || COALESCE(category, '') || ' ' || COALESCE(content, '')));
-CREATE INDEX IF NOT EXISTS post_comments_global_search_idx
-  ON public.post_comments USING gin (pg_catalog.to_tsvector('simple'::regconfig, COALESCE(content, '')));
-CREATE INDEX IF NOT EXISTS group_posts_global_search_idx
-  ON public.group_posts USING gin (pg_catalog.to_tsvector('simple'::regconfig, COALESCE(body, '')));
-CREATE INDEX IF NOT EXISTS answers_global_search_idx
-  ON public.answers USING gin (pg_catalog.to_tsvector('simple'::regconfig, COALESCE(body, '')));
-CREATE INDEX IF NOT EXISTS question_comments_global_search_idx
-  ON public.question_comments USING gin (pg_catalog.to_tsvector('simple'::regconfig, COALESCE(body, '')));
-CREATE INDEX IF NOT EXISTS mentors_global_search_idx
-  ON public.mentors USING gin (pg_catalog.to_tsvector('simple'::regconfig,
-    COALESCE(display_name, '') || ' ' || COALESCE(headline, '') || ' ' ||
-    COALESCE(bio, '') || ' ' || pg_catalog.array_to_string(subjects, ' ')));
-CREATE INDEX IF NOT EXISTS community_events_global_search_idx
-  ON public.community_events USING gin (pg_catalog.to_tsvector('simple'::regconfig,
-    COALESCE(title, '') || ' ' || COALESCE(description, '') || ' ' || COALESCE(venue, '')));
-CREATE INDEX IF NOT EXISTS live_sessions_global_search_idx
-  ON public.live_sessions USING gin (pg_catalog.to_tsvector('simple'::regconfig,
-    COALESCE(title, '') || ' ' || COALESCE(description, '')));
-
-CREATE INDEX IF NOT EXISTS course_modules_global_search_idx
-  ON public.course_modules USING gin (pg_catalog.to_tsvector('simple'::regconfig,
-    COALESCE(title, '') || ' ' || COALESCE(description, '')));
-CREATE INDEX IF NOT EXISTS course_lessons_global_search_idx
-  ON public.course_lessons USING gin (pg_catalog.to_tsvector('simple'::regconfig,
-    COALESCE(title, '') || ' ' || COALESCE(description, '') || ' ' ||
-    COALESCE(content, '') || ' ' || COALESCE(lesson_type, '')));
-CREATE INDEX IF NOT EXISTS study_channels_global_search_idx
-  ON public.study_channels USING gin (pg_catalog.to_tsvector('simple'::regconfig,
-    COALESCE(slug, '') || ' ' || COALESCE(title, '') || ' ' ||
-    COALESCE(description, '') || ' ' || COALESCE(level, '')));
-
--- ---------------------------------------------------------------------------
+-- 6. Global search indexes are intentionally omitted in this migration.
+-- PostgreSQL rejected at least one expression index in this deployment with
+-- SQLSTATE 42P17 (non-IMMUTABLE function in index expression). The search RPC
+-- below remains functional without these optional performance indexes. Once the
+-- exact failing expression is identified against the target schema, safe indexes
+-- can be added in a separate migration.
+--
 -- 7. One global search RPC. Existing search categories remain intact. Additional
 -- results include public feed posts/replies, official institutions, visible
 -- group posts, answers/comments, verified mentors and public events/live rooms.
