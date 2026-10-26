@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { createPortal } from 'react-dom'
-import { Search, X, Loader2, BookOpen, Users, MessageSquare, Briefcase, GraduationCap } from 'lucide-react'
+import { Search, X, Loader2, BookOpen, Users, MessageSquare, Briefcase, GraduationCap, FileText, CalendarDays, UserRound } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 type Result = {
@@ -26,19 +26,35 @@ const icons: Record<string, typeof BookOpen> = {
   opportunities: Briefcase,
   universities: GraduationCap,
   university_programmes: GraduationCap,
+  institution_communities: GraduationCap,
+  posts: FileText,
+  mentors: UserRound,
+  community_events: CalendarDays,
+  live_sessions: CalendarDays,
+  course_lessons: BookOpen,
+  study_channels: Users,
 }
 const typeLabels: Record<string, string> = {
   notes: 'Notes', past_papers: 'Past paper', study_groups: 'Study group',
   questions: 'Swali', courses: 'Kozi', opportunities: 'Fursa',
   universities: 'Chuo', university_programmes: 'Programu ya chuo',
+  institution_communities: 'Shule / Chuo na jamii rasmi',
+  posts: 'Post ya Home Feed', mentors: 'Mentor',
+  community_events: 'Tukio', live_sessions: 'Live session',
+  course_lessons: 'Somo la kozi', study_channels: 'Channel ya somo',
 }
 function hrefFor(r: Result) {
   if (r.result_type === 'notes' || r.result_type === 'past_papers') return `/library/${r.result_id}?type=${r.result_type}`
   if (r.result_type === 'study_groups') return `/communities/room/${r.result_id}`
   if (r.result_type === 'questions') return `/communities/questions/${r.result_id}`
-  if (r.result_type === 'courses') return `/learn/${r.result_id}`
+  if (r.result_type === 'courses' || r.result_type === 'course_lessons') return `/learn/${r.result_id}`
   if (r.result_type === 'opportunities') return `/opportunities/${r.result_id}`
   if (r.result_type === 'universities' || r.result_type === 'university_programmes') return '/opportunities?tab=universities'
+  if (r.result_type === 'institution_communities') return `/communities/institution/${r.result_id}?kind=${r.level === 'SCHOOL' ? 'school' : 'tertiary'}`
+  if (r.result_type === 'posts') return `/posts/${r.result_id}`
+  if (r.result_type === 'mentors') return '/communities?tab=mentors'
+  if (r.result_type === 'community_events' || r.result_type === 'live_sessions') return '/communities?tab=events'
+  if (r.result_type === 'study_channels') return '/communities?tab=channels'
   return '/dashboard'
 }
 
@@ -64,9 +80,17 @@ function SearchPanel({ onClose }: { onClose: () => void }) {
     let cancelled = false
     setLoading(true)
     const timer = setTimeout(async () => {
-      const { data, error: rpcError } = await supabase.rpc('search_smartnekam', {
-        p_query: q.slice(0, 120), p_limit: 12, p_type: null,
+      let { data, error: rpcError } = await supabase.rpc('search_smartnekam_global', {
+        p_query: q.slice(0, 120), p_limit: 24, p_type: null,
       })
+      // Keep the previous search working if SQL 045 has not been applied yet.
+      if (rpcError && (rpcError.code === 'PGRST202' || /search_smartnekam_global.*(not found|schema cache|function)/i.test(rpcError.message))) {
+        const fallback = await supabase.rpc('search_smartnekam', {
+          p_query: q.slice(0, 120), p_limit: 12, p_type: null,
+        })
+        data = fallback.data
+        rpcError = fallback.error
+      }
       if (cancelled) return
       setResults((data ?? []) as Result[])
       setSearched(q)
@@ -80,7 +104,7 @@ function SearchPanel({ onClose }: { onClose: () => void }) {
     <div className="fixed inset-0 z-[70] flex items-start justify-center px-4 pt-[8vh]">
       <button type="button" aria-label="Funga utafutaji" className="absolute inset-0 bg-black/60" onClick={onClose} />
       <section role="dialog" aria-modal="true" aria-label="Tafuta SmartNekam" className="geometric-card anim-sheet-up relative z-10 w-full max-w-2xl overflow-hidden rounded-2xl">
-        <div className="flex items-center gap-3 border-b border-emerald-100 px-4 dark:border-slate-800"><Search className="h-5 w-5 shrink-0 text-slate-400" /><input ref={inputRef} value={term} onChange={(e) => setTerm(e.target.value)} placeholder="Tafuta notes, maswali, kozi, vikundi au fursa..." className="w-full bg-transparent py-4 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none dark:text-slate-100" />{loading ? <Loader2 className="h-4 w-4 animate-spin text-slate-400" /> : <button type="button" onClick={onClose} aria-label="Funga" className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"><X className="h-4 w-4" /></button>}</div>
+        <div className="flex items-center gap-3 border-b border-emerald-100 px-4 dark:border-slate-800"><Search className="h-5 w-5 shrink-0 text-slate-400" /><input ref={inputRef} value={term} onChange={(e) => setTerm(e.target.value)} placeholder="Tafuta kila kitu: notes, posts, shule, maswali, fursa, mentors..." className="w-full bg-transparent py-4 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none dark:text-slate-100" />{loading ? <Loader2 className="h-4 w-4 animate-spin text-slate-400" /> : <button type="button" onClick={onClose} aria-label="Funga" className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"><X className="h-4 w-4" /></button>}</div>
         <div className="max-h-[65vh] overflow-y-auto p-2">
           {term.trim().length < 2 && <p className="px-3 py-8 text-center text-sm text-slate-500">Andika angalau herufi 2 kutafuta.</p>}
           {error && <p className="m-2 rounded-xl bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950/50 dark:text-red-200">Utafutaji haukufanikiwa: {error}</p>}
