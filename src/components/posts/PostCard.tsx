@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Heart, MessageCircle, Share2, Send, Loader2, Check, CornerDownRight, X, FileText, FileImage, Download, UserPlus } from 'lucide-react'
+import { Heart, MessageCircle, Share2, Send, Loader2, Check, CornerDownRight, X, FileText, FileImage, Download, UserPlus, Pin, Megaphone } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import RichContent from '@/components/posts/RichContent'
 
@@ -25,6 +25,10 @@ export type FeedPost = {
   attachments?: { url: string; name: string; mime_type: string; size_bytes?: number }[] | null
   author_follower_count?: number | null
   following_author_by_me?: boolean | null
+  is_pinned?: boolean
+  is_sponsored?: boolean
+  promotion_label?: string | null
+  promoted_until?: string | null
 }
 
 type FeedComment = {
@@ -255,6 +259,13 @@ export default function PostCard({
       style={{ animationDelay: `${Math.min(index, 6) * 60}ms` }}
       className="geometric-card hover-lift anim-fade-up p-4"
     >
+      {(post.is_pinned || post.is_sponsored) && <div className="mb-3 flex flex-wrap items-center gap-2 border-b border-slate-100 pb-3 dark:border-slate-800">
+        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-extrabold ${post.is_sponsored ? 'bg-violet-100 text-violet-800 dark:bg-violet-950 dark:text-violet-200' : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200'}`}>
+          {post.is_sponsored ? <Megaphone className="h-3.5 w-3.5" /> : <Pin className="h-3.5 w-3.5" />}
+          {post.is_sponsored ? 'Tangazo lililolipiwa' : 'Imepandishwa juu'}
+        </span>
+        {post.promotion_label && <span className="text-xs font-bold text-slate-700 dark:text-slate-200">{post.promotion_label}</span>}
+      </div>}
       {/* Mwandishi */}
       <div className="flex items-start gap-3">
         <Avatar name={authorName} url={post.author_avatar} />
