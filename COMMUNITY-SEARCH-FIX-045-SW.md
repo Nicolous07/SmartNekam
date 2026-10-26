@@ -12,7 +12,7 @@ SQL 045 inarekebisha flow ya Official Community kwa kutumia school_id / universi
 - Huunda/huweka trigger ya auto-join kwa signup mpya au profile ikibadilisha taasisi.
 - RPC join_smartnekam_institution_community hurekebisha affiliation pale inapoweza, kisha huruhusu kujiunga ikiwa ID ya shule/chuo inalingana kabisa.
 - Huondoa membership za zamani za Official Community ambazo zinakinzana na taasisi iliyo kwenye profile.
-- Huongeza RPC search_smartnekam_global kwa kutafuta katika matokeo yaliyokuwepo pamoja na Home Feed posts/comments, institution communities, group posts zinazoonekana, Q&A answers/comments, mentors walioidhinishwa, events na public live sessions.
+- Huongeza RPC search_smartnekam_global kwa kutafuta katika matokeo yaliyokuwepo pamoja na Home Feed posts/comments, institution communities, group posts zinazoonekana, Q&A answers/comments, titles/descriptions/content ya course lessons na modules zinazoweza kuonekana kwa mtumiaji, Study Channels, mentors walioidhinishwa, events na public live sessions.
 - UI ya SearchDialog sasa hutumia RPC mpya na ina routes/labels kwa matokeo mapya. Ikiwa SQL 045 bado haijaendeshwa, hutumia utafutaji wa zamani kama fallback.
 
 ## Mahitaji kabla ya ku-run
@@ -33,7 +33,7 @@ Hakikisha msingi wa SmartNekam umewekwa, hasa:
 2. Fungua faili sql/045_smartnekam_community_autojoin_global_search.sql kwenye mradi.
 3. Nakili faili lote, libandike kwenye SQL Editor na bonyeza Run.
 4. Baada ya Success, deploy toleo la frontend lenye src/components/layout/SearchDialog.tsx kutoka branch ya fix.
-5. Jaribu search kwa jina la shule, neno kwenye post, neno kwenye answer, jina la mentor na title ya event.
+5. Jaribu search kwa jina la shule, neno ndani ya post/comment, neno ndani ya lesson unayoweza kusoma, jina la Study Channel, neno kwenye answer, jina la mentor na title ya event.
 6. Jaribu kuingia kwa akaunti yenye shule sahihi na ubonyeze “Jiunge na jamii rasmi”.
 
 ## Ukaguzi wa baada ya migration
