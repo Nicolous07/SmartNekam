@@ -323,6 +323,18 @@ WHERE p.status = 'active'
 ON CONFLICT (community_id, user_id) DO UPDATE
   SET member_role = 'member', verified_student = true;
 
+-- Official communities are strictly institution-scoped. Remove stale memberships
+-- created by earlier versions where a user had a different school/university ID.
+DELETE FROM public.institution_community_members m
+USING public.institution_communities c, public.profiles p
+WHERE m.community_id = c.id
+  AND m.user_id = p.id
+  AND (
+    (c.school_id IS NOT NULL AND p.school_id IS DISTINCT FROM c.school_id)
+    OR
+    (c.university_id IS NOT NULL AND p.university_id IS DISTINCT FROM c.university_id)
+  );
+
 -- ---------------------------------------------------------------------------
 -- 5. Make the join button repair the signed-in user's missing ID from trusted
 -- signup metadata or a unique registry name, then enforce exact institution ID.
