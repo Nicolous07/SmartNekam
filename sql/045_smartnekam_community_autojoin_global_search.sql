@@ -26,7 +26,7 @@ SET search_path = ''
 AS $function$
   SELECT pg_catalog.btrim(
     pg_catalog.regexp_replace(
-      pg_catalog.lower(pg_catalog.coalesce(p_value, '')),
+      pg_catalog.lower(COALESCE(p_value, '')),
       '[^[:alnum:]]+',
       ' ',
       'g'
@@ -144,11 +144,11 @@ SET school_id = s.id,
     institution_name = NULL
 FROM auth.users au
 JOIN public.schools s
-  ON s.id::text = pg_catalog.btrim(pg_catalog.coalesce(au.raw_user_meta_data ->> 'school_id', ''))
+  ON s.id::text = pg_catalog.btrim(COALESCE(au.raw_user_meta_data ->> 'school_id', ''))
 WHERE au.id = p.id
   AND p.school_id IS NULL
   AND p.university_id IS NULL
-  AND pg_catalog.upper(pg_catalog.coalesce(
+  AND pg_catalog.upper(COALESCE(
     NULLIF(pg_catalog.btrim(p.level), ''),
     NULLIF(pg_catalog.btrim(au.raw_user_meta_data ->> 'level'), '')
   )) IN ('O_LEVEL','A_LEVEL');
@@ -158,11 +158,11 @@ SET university_id = u.id,
     institution_name = NULL
 FROM auth.users au
 JOIN public.universities u
-  ON u.id::text = pg_catalog.btrim(pg_catalog.coalesce(au.raw_user_meta_data ->> 'university_id', ''))
+  ON u.id::text = pg_catalog.btrim(COALESCE(au.raw_user_meta_data ->> 'university_id', ''))
 WHERE au.id = p.id
   AND p.university_id IS NULL
   AND p.school_id IS NULL
-  AND pg_catalog.upper(pg_catalog.coalesce(
+  AND pg_catalog.upper(COALESCE(
     NULLIF(pg_catalog.btrim(p.level), ''),
     NULLIF(pg_catalog.btrim(au.raw_user_meta_data ->> 'level'), '')
   )) = 'UNIVERSITY';
@@ -170,11 +170,11 @@ WHERE au.id = p.id
 WITH source_names AS (
   SELECT
     p.id AS profile_id,
-    pg_catalog.upper(pg_catalog.coalesce(
+    pg_catalog.upper(COALESCE(
       NULLIF(pg_catalog.btrim(p.level), ''),
       NULLIF(pg_catalog.btrim(au.raw_user_meta_data ->> 'level'), '')
     )) AS level_code,
-    pg_catalog.coalesce(
+    COALESCE(
       NULLIF(pg_catalog.btrim(p.institution_name), ''),
       NULLIF(pg_catalog.btrim(au.raw_user_meta_data ->> 'institution_name'), '')
     ) AS institution_label
@@ -192,7 +192,7 @@ school_candidates AS (
       = public.smartnekam_normalize_institution_name(s.name)
     OR EXISTS (
       SELECT 1
-      FROM pg_catalog.unnest(pg_catalog.coalesce(s.aliases, ARRAY[]::text[])) AS alias_name(value)
+      FROM pg_catalog.unnest(COALESCE(s.aliases, ARRAY[]::text[])) AS alias_name(value)
       WHERE public.smartnekam_normalize_institution_name(sn.institution_label)
         = public.smartnekam_normalize_institution_name(alias_name.value)
     )
@@ -211,11 +211,11 @@ WHERE p.id = m.profile_id;
 WITH source_names AS (
   SELECT
     p.id AS profile_id,
-    pg_catalog.upper(pg_catalog.coalesce(
+    pg_catalog.upper(COALESCE(
       NULLIF(pg_catalog.btrim(p.level), ''),
       NULLIF(pg_catalog.btrim(au.raw_user_meta_data ->> 'level'), '')
     )) AS level_code,
-    pg_catalog.coalesce(
+    COALESCE(
       NULLIF(pg_catalog.btrim(p.institution_name), ''),
       NULLIF(pg_catalog.btrim(au.raw_user_meta_data ->> 'institution_name'), '')
     ) AS institution_label
@@ -233,7 +233,7 @@ university_candidates AS (
       = public.smartnekam_normalize_institution_name(u.name)
     OR EXISTS (
       SELECT 1
-      FROM pg_catalog.unnest(pg_catalog.coalesce(u.aliases, ARRAY[]::text[])) AS alias_name(value)
+      FROM pg_catalog.unnest(COALESCE(u.aliases, ARRAY[]::text[])) AS alias_name(value)
       WHERE public.smartnekam_normalize_institution_name(sn.institution_label)
         = public.smartnekam_normalize_institution_name(alias_name.value)
     )
@@ -375,11 +375,11 @@ BEGIN
 
   SELECT au.raw_user_meta_data INTO v_meta
   FROM auth.users au WHERE au.id = v_user_id;
-  v_profile_level := pg_catalog.upper(pg_catalog.coalesce(
+  v_profile_level := pg_catalog.upper(COALESCE(
     NULLIF(pg_catalog.btrim(v_profile_level), ''),
     NULLIF(pg_catalog.btrim(v_meta ->> 'level'), '')
   ));
-  v_institution_name := pg_catalog.coalesce(
+  v_institution_name := COALESCE(
     NULLIF(pg_catalog.btrim(v_institution_name), ''),
     NULLIF(pg_catalog.btrim(v_meta ->> 'institution_name'), '')
   );
@@ -409,7 +409,7 @@ BEGIN
     WHERE public.smartnekam_normalize_institution_name(s.name)
             = public.smartnekam_normalize_institution_name(v_institution_name)
        OR EXISTS (
-          SELECT 1 FROM pg_catalog.unnest(pg_catalog.coalesce(s.aliases, ARRAY[]::text[])) AS a(value)
+          SELECT 1 FROM pg_catalog.unnest(COALESCE(s.aliases, ARRAY[]::text[])) AS a(value)
           WHERE public.smartnekam_normalize_institution_name(a.value)
               = public.smartnekam_normalize_institution_name(v_institution_name)
        );
@@ -423,7 +423,7 @@ BEGIN
     WHERE public.smartnekam_normalize_institution_name(u.name)
             = public.smartnekam_normalize_institution_name(v_institution_name)
        OR EXISTS (
-          SELECT 1 FROM pg_catalog.unnest(pg_catalog.coalesce(u.aliases, ARRAY[]::text[])) AS a(value)
+          SELECT 1 FROM pg_catalog.unnest(COALESCE(u.aliases, ARRAY[]::text[])) AS a(value)
           WHERE public.smartnekam_normalize_institution_name(a.value)
               = public.smartnekam_normalize_institution_name(v_institution_name)
        );
@@ -488,37 +488,37 @@ GRANT EXECUTE ON FUNCTION public.join_smartnekam_institution_community(uuid) TO 
 -- ---------------------------------------------------------------------------
 CREATE INDEX IF NOT EXISTS posts_global_search_idx
   ON public.posts USING gin (pg_catalog.to_tsvector('simple'::regconfig,
-    pg_catalog.coalesce(subject, '') || ' ' || pg_catalog.coalesce(category, '') || ' ' || pg_catalog.coalesce(content, '')));
+    COALESCE(subject, '') || ' ' || COALESCE(category, '') || ' ' || COALESCE(content, '')));
 CREATE INDEX IF NOT EXISTS post_comments_global_search_idx
-  ON public.post_comments USING gin (pg_catalog.to_tsvector('simple'::regconfig, pg_catalog.coalesce(content, '')));
+  ON public.post_comments USING gin (pg_catalog.to_tsvector('simple'::regconfig, COALESCE(content, '')));
 CREATE INDEX IF NOT EXISTS group_posts_global_search_idx
-  ON public.group_posts USING gin (pg_catalog.to_tsvector('simple'::regconfig, pg_catalog.coalesce(body, '')));
+  ON public.group_posts USING gin (pg_catalog.to_tsvector('simple'::regconfig, COALESCE(body, '')));
 CREATE INDEX IF NOT EXISTS answers_global_search_idx
-  ON public.answers USING gin (pg_catalog.to_tsvector('simple'::regconfig, pg_catalog.coalesce(body, '')));
+  ON public.answers USING gin (pg_catalog.to_tsvector('simple'::regconfig, COALESCE(body, '')));
 CREATE INDEX IF NOT EXISTS question_comments_global_search_idx
-  ON public.question_comments USING gin (pg_catalog.to_tsvector('simple'::regconfig, pg_catalog.coalesce(body, '')));
+  ON public.question_comments USING gin (pg_catalog.to_tsvector('simple'::regconfig, COALESCE(body, '')));
 CREATE INDEX IF NOT EXISTS mentors_global_search_idx
   ON public.mentors USING gin (pg_catalog.to_tsvector('simple'::regconfig,
-    pg_catalog.coalesce(display_name, '') || ' ' || pg_catalog.coalesce(headline, '') || ' ' ||
-    pg_catalog.coalesce(bio, '') || ' ' || pg_catalog.array_to_string(subjects, ' ')));
+    COALESCE(display_name, '') || ' ' || COALESCE(headline, '') || ' ' ||
+    COALESCE(bio, '') || ' ' || pg_catalog.array_to_string(subjects, ' ')));
 CREATE INDEX IF NOT EXISTS community_events_global_search_idx
   ON public.community_events USING gin (pg_catalog.to_tsvector('simple'::regconfig,
-    pg_catalog.coalesce(title, '') || ' ' || pg_catalog.coalesce(description, '') || ' ' || pg_catalog.coalesce(venue, '')));
+    COALESCE(title, '') || ' ' || COALESCE(description, '') || ' ' || COALESCE(venue, '')));
 CREATE INDEX IF NOT EXISTS live_sessions_global_search_idx
   ON public.live_sessions USING gin (pg_catalog.to_tsvector('simple'::regconfig,
-    pg_catalog.coalesce(title, '') || ' ' || pg_catalog.coalesce(description, '')));
+    COALESCE(title, '') || ' ' || COALESCE(description, '')));
 
 CREATE INDEX IF NOT EXISTS course_modules_global_search_idx
   ON public.course_modules USING gin (pg_catalog.to_tsvector('simple'::regconfig,
-    pg_catalog.coalesce(title, '') || ' ' || pg_catalog.coalesce(description, '')));
+    COALESCE(title, '') || ' ' || COALESCE(description, '')));
 CREATE INDEX IF NOT EXISTS course_lessons_global_search_idx
   ON public.course_lessons USING gin (pg_catalog.to_tsvector('simple'::regconfig,
-    pg_catalog.coalesce(title, '') || ' ' || pg_catalog.coalesce(description, '') || ' ' ||
-    pg_catalog.coalesce(content, '') || ' ' || pg_catalog.coalesce(lesson_type, '')));
+    COALESCE(title, '') || ' ' || COALESCE(description, '') || ' ' ||
+    COALESCE(content, '') || ' ' || COALESCE(lesson_type, '')));
 CREATE INDEX IF NOT EXISTS study_channels_global_search_idx
   ON public.study_channels USING gin (pg_catalog.to_tsvector('simple'::regconfig,
-    pg_catalog.coalesce(slug, '') || ' ' || pg_catalog.coalesce(title, '') || ' ' ||
-    pg_catalog.coalesce(description, '') || ' ' || pg_catalog.coalesce(level, '')));
+    COALESCE(slug, '') || ' ' || COALESCE(title, '') || ' ' ||
+    COALESCE(description, '') || ' ' || COALESCE(level, '')));
 
 -- ---------------------------------------------------------------------------
 -- 7. One global search RPC. Existing search categories remain intact. Additional
@@ -547,9 +547,9 @@ SET search_path = public
 AS $function$
   WITH input AS (
     SELECT
-      pg_catalog.btrim(pg_catalog.coalesce(p_query, '')) AS needle,
+      pg_catalog.btrim(COALESCE(p_query, '')) AS needle,
       pg_catalog.websearch_to_tsquery('simple'::regconfig,
-        NULLIF(pg_catalog.btrim(pg_catalog.coalesce(p_query, '')), '')) AS tsq
+        NULLIF(pg_catalog.btrim(COALESCE(p_query, '')), '')) AS tsq
   ),
   base_results AS (
     SELECT b.result_type, b.result_id, b.title, b.summary, b.level,
@@ -576,16 +576,16 @@ AS $function$
       c.created_at,
       pg_catalog.ts_rank_cd(
         pg_catalog.to_tsvector('simple'::regconfig,
-          pg_catalog.coalesce(c.name, '') || ' ' ||
-          pg_catalog.coalesce(s.name, '') || ' ' ||
-          pg_catalog.coalesce(u.name, '') || ' ' ||
-          pg_catalog.coalesce(s.region, '') || ' ' ||
-          pg_catalog.coalesce(u.region, '') || ' ' ||
-          pg_catalog.coalesce(s.country, '') || ' ' ||
-          pg_catalog.coalesce(u.country, '') || ' ' ||
-          pg_catalog.coalesce(pg_catalog.array_to_string(s.aliases, ' '), '') || ' ' ||
-          pg_catalog.coalesce(pg_catalog.array_to_string(u.aliases, ' '), '') || ' ' ||
-          pg_catalog.coalesce(c.description, '')
+          COALESCE(c.name, '') || ' ' ||
+          COALESCE(s.name, '') || ' ' ||
+          COALESCE(u.name, '') || ' ' ||
+          COALESCE(s.region, '') || ' ' ||
+          COALESCE(u.region, '') || ' ' ||
+          COALESCE(s.country, '') || ' ' ||
+          COALESCE(u.country, '') || ' ' ||
+          COALESCE(pg_catalog.array_to_string(s.aliases, ' '), '') || ' ' ||
+          COALESCE(pg_catalog.array_to_string(u.aliases, ' '), '') || ' ' ||
+          COALESCE(c.description, '')
         ), i.tsq
       )::real AS relevance,
       NULL::boolean AS is_verified
@@ -596,16 +596,16 @@ AS $function$
     WHERE pg_catalog.char_length(i.needle) >= 2 AND i.tsq IS NOT NULL
       AND (p_type IS NULL OR p_type = 'institution_communities')
       AND pg_catalog.to_tsvector('simple'::regconfig,
-          pg_catalog.coalesce(c.name, '') || ' ' ||
-          pg_catalog.coalesce(s.name, '') || ' ' ||
-          pg_catalog.coalesce(u.name, '') || ' ' ||
-          pg_catalog.coalesce(s.region, '') || ' ' ||
-          pg_catalog.coalesce(u.region, '') || ' ' ||
-          pg_catalog.coalesce(s.country, '') || ' ' ||
-          pg_catalog.coalesce(u.country, '') || ' ' ||
-          pg_catalog.coalesce(pg_catalog.array_to_string(s.aliases, ' '), '') || ' ' ||
-          pg_catalog.coalesce(pg_catalog.array_to_string(u.aliases, ' '), '') || ' ' ||
-          pg_catalog.coalesce(c.description, '')
+          COALESCE(c.name, '') || ' ' ||
+          COALESCE(s.name, '') || ' ' ||
+          COALESCE(u.name, '') || ' ' ||
+          COALESCE(s.region, '') || ' ' ||
+          COALESCE(u.region, '') || ' ' ||
+          COALESCE(s.country, '') || ' ' ||
+          COALESCE(u.country, '') || ' ' ||
+          COALESCE(pg_catalog.array_to_string(s.aliases, ' '), '') || ' ' ||
+          COALESCE(pg_catalog.array_to_string(u.aliases, ' '), '') || ' ' ||
+          COALESCE(c.description, '')
         ) @@ i.tsq
 
     UNION ALL
@@ -616,7 +616,7 @@ AS $function$
       p.id,
       coalesce(NULLIF(p.subject, ''), pg_catalog.left(p.content, 120))::text,
       pg_catalog.left(
-        pg_catalog.coalesce(p.content, '') ||
+        COALESCE(p.content, '') ||
         CASE WHEN NULLIF(p.subject, '') IS NOT NULL THEN ' · ' || p.subject ELSE '' END,
         240
       )::text,
@@ -624,9 +624,9 @@ AS $function$
       p.created_at,
       pg_catalog.ts_rank_cd(
         pg_catalog.to_tsvector('simple'::regconfig,
-          pg_catalog.coalesce(p.subject, '') || ' ' ||
-          pg_catalog.coalesce(p.category, '') || ' ' ||
-          pg_catalog.coalesce(p.content, '')), i.tsq
+          COALESCE(p.subject, '') || ' ' ||
+          COALESCE(p.category, '') || ' ' ||
+          COALESCE(p.content, '')), i.tsq
       )::real,
       NULL::boolean
     FROM public.posts_feed p
@@ -634,9 +634,9 @@ AS $function$
     WHERE pg_catalog.char_length(i.needle) >= 2 AND i.tsq IS NOT NULL
       AND (p_type IS NULL OR p_type = 'posts')
       AND pg_catalog.to_tsvector('simple'::regconfig,
-          pg_catalog.coalesce(p.subject, '') || ' ' ||
-          pg_catalog.coalesce(p.category, '') || ' ' ||
-          pg_catalog.coalesce(p.content, '')) @@ i.tsq
+          COALESCE(p.subject, '') || ' ' ||
+          COALESCE(p.category, '') || ' ' ||
+          COALESCE(p.content, '')) @@ i.tsq
 
     UNION ALL
 
@@ -650,9 +650,9 @@ AS $function$
       c.created_at,
       pg_catalog.ts_rank_cd(
         pg_catalog.to_tsvector('simple'::regconfig,
-          pg_catalog.coalesce(p.subject, '') || ' ' ||
-          pg_catalog.coalesce(p.content, '') || ' ' ||
-          pg_catalog.coalesce(c.content, '')), i.tsq
+          COALESCE(p.subject, '') || ' ' ||
+          COALESCE(p.content, '') || ' ' ||
+          COALESCE(c.content, '')), i.tsq
       )::real,
       NULL::boolean
     FROM public.post_comments_feed c
@@ -661,9 +661,9 @@ AS $function$
     WHERE pg_catalog.char_length(i.needle) >= 2 AND i.tsq IS NOT NULL
       AND (p_type IS NULL OR p_type = 'posts')
       AND pg_catalog.to_tsvector('simple'::regconfig,
-          pg_catalog.coalesce(p.subject, '') || ' ' ||
-          pg_catalog.coalesce(p.content, '') || ' ' ||
-          pg_catalog.coalesce(c.content, '')) @@ i.tsq
+          COALESCE(p.subject, '') || ' ' ||
+          COALESCE(p.content, '') || ' ' ||
+          COALESCE(c.content, '')) @@ i.tsq
 
     UNION ALL
 
@@ -677,10 +677,10 @@ AS $function$
       a.created_at,
       pg_catalog.ts_rank_cd(
         pg_catalog.to_tsvector('simple'::regconfig,
-          pg_catalog.coalesce(q.title, '') || ' ' ||
-          pg_catalog.coalesce(q.body, '') || ' ' ||
-          pg_catalog.coalesce(a.body, '') || ' ' ||
-          pg_catalog.coalesce(s.name, '')), i.tsq
+          COALESCE(q.title, '') || ' ' ||
+          COALESCE(q.body, '') || ' ' ||
+          COALESCE(a.body, '') || ' ' ||
+          COALESCE(s.name, '')), i.tsq
       )::real,
       NULL::boolean
     FROM public.answers a
@@ -691,10 +691,10 @@ AS $function$
       AND (p_type IS NULL OR p_type = 'questions')
       AND q.status IN ('open','resolved')
       AND pg_catalog.to_tsvector('simple'::regconfig,
-          pg_catalog.coalesce(q.title, '') || ' ' ||
-          pg_catalog.coalesce(q.body, '') || ' ' ||
-          pg_catalog.coalesce(a.body, '') || ' ' ||
-          pg_catalog.coalesce(s.name, '')) @@ i.tsq
+          COALESCE(q.title, '') || ' ' ||
+          COALESCE(q.body, '') || ' ' ||
+          COALESCE(a.body, '') || ' ' ||
+          COALESCE(s.name, '')) @@ i.tsq
 
     UNION ALL
 
@@ -707,10 +707,10 @@ AS $function$
       c.created_at,
       pg_catalog.ts_rank_cd(
         pg_catalog.to_tsvector('simple'::regconfig,
-          pg_catalog.coalesce(q.title, '') || ' ' ||
-          pg_catalog.coalesce(q.body, '') || ' ' ||
-          pg_catalog.coalesce(c.body, '') || ' ' ||
-          pg_catalog.coalesce(s.name, '')), i.tsq
+          COALESCE(q.title, '') || ' ' ||
+          COALESCE(q.body, '') || ' ' ||
+          COALESCE(c.body, '') || ' ' ||
+          COALESCE(s.name, '')), i.tsq
       )::real,
       NULL::boolean
     FROM public.question_comments c
@@ -721,10 +721,10 @@ AS $function$
       AND (p_type IS NULL OR p_type = 'questions')
       AND q.status IN ('open','resolved')
       AND pg_catalog.to_tsvector('simple'::regconfig,
-          pg_catalog.coalesce(q.title, '') || ' ' ||
-          pg_catalog.coalesce(q.body, '') || ' ' ||
-          pg_catalog.coalesce(c.body, '') || ' ' ||
-          pg_catalog.coalesce(s.name, '')) @@ i.tsq
+          COALESCE(q.title, '') || ' ' ||
+          COALESCE(q.body, '') || ' ' ||
+          COALESCE(c.body, '') || ' ' ||
+          COALESCE(s.name, '')) @@ i.tsq
 
     UNION ALL
 
@@ -739,9 +739,9 @@ AS $function$
       p.created_at,
       pg_catalog.ts_rank_cd(
         pg_catalog.to_tsvector('simple'::regconfig,
-          pg_catalog.coalesce(g.name, '') || ' ' ||
-          pg_catalog.coalesce(g.description, '') || ' ' ||
-          pg_catalog.coalesce(p.body, '')), i.tsq
+          COALESCE(g.name, '') || ' ' ||
+          COALESCE(g.description, '') || ' ' ||
+          COALESCE(p.body, '')), i.tsq
       )::real,
       NULL::boolean
     FROM public.group_posts p
@@ -751,9 +751,9 @@ AS $function$
       AND (p_type IS NULL OR p_type = 'study_groups')
       AND g.status = 'active'
       AND pg_catalog.to_tsvector('simple'::regconfig,
-          pg_catalog.coalesce(g.name, '') || ' ' ||
-          pg_catalog.coalesce(g.description, '') || ' ' ||
-          pg_catalog.coalesce(p.body, '')) @@ i.tsq
+          COALESCE(g.name, '') || ' ' ||
+          COALESCE(g.description, '') || ' ' ||
+          COALESCE(p.body, '')) @@ i.tsq
 
     UNION ALL
 
@@ -770,10 +770,10 @@ AS $function$
       m.created_at,
       pg_catalog.ts_rank_cd(
         pg_catalog.to_tsvector('simple'::regconfig,
-          pg_catalog.coalesce(m.display_name, '') || ' ' ||
-          pg_catalog.coalesce(m.headline, '') || ' ' ||
-          pg_catalog.coalesce(m.bio, '') || ' ' ||
-          pg_catalog.coalesce(pg_catalog.array_to_string(m.subjects, ' '), '')), i.tsq
+          COALESCE(m.display_name, '') || ' ' ||
+          COALESCE(m.headline, '') || ' ' ||
+          COALESCE(m.bio, '') || ' ' ||
+          COALESCE(pg_catalog.array_to_string(m.subjects, ' '), '')), i.tsq
       )::real,
       m.verified
     FROM public.mentors m
@@ -782,10 +782,10 @@ AS $function$
       AND (p_type IS NULL OR p_type = 'mentors')
       AND m.verified = true AND m.status = 'active'
       AND pg_catalog.to_tsvector('simple'::regconfig,
-          pg_catalog.coalesce(m.display_name, '') || ' ' ||
-          pg_catalog.coalesce(m.headline, '') || ' ' ||
-          pg_catalog.coalesce(m.bio, '') || ' ' ||
-          pg_catalog.coalesce(pg_catalog.array_to_string(m.subjects, ' '), '')) @@ i.tsq
+          COALESCE(m.display_name, '') || ' ' ||
+          COALESCE(m.headline, '') || ' ' ||
+          COALESCE(m.bio, '') || ' ' ||
+          COALESCE(pg_catalog.array_to_string(m.subjects, ' '), '')) @@ i.tsq
 
     UNION ALL
 
@@ -798,10 +798,10 @@ AS $function$
       e.created_at,
       pg_catalog.ts_rank_cd(
         pg_catalog.to_tsvector('simple'::regconfig,
-          pg_catalog.coalesce(e.title, '') || ' ' ||
-          pg_catalog.coalesce(e.description, '') || ' ' ||
-          pg_catalog.coalesce(e.venue, '') || ' ' ||
-          pg_catalog.coalesce(e.event_type, '')), i.tsq
+          COALESCE(e.title, '') || ' ' ||
+          COALESCE(e.description, '') || ' ' ||
+          COALESCE(e.venue, '') || ' ' ||
+          COALESCE(e.event_type, '')), i.tsq
       )::real,
       NULL::boolean
     FROM public.community_events e
@@ -810,10 +810,10 @@ AS $function$
       AND (p_type IS NULL OR p_type = 'community_events')
       AND e.status = 'active'
       AND pg_catalog.to_tsvector('simple'::regconfig,
-          pg_catalog.coalesce(e.title, '') || ' ' ||
-          pg_catalog.coalesce(e.description, '') || ' ' ||
-          pg_catalog.coalesce(e.venue, '') || ' ' ||
-          pg_catalog.coalesce(e.event_type, '')) @@ i.tsq
+          COALESCE(e.title, '') || ' ' ||
+          COALESCE(e.description, '') || ' ' ||
+          COALESCE(e.venue, '') || ' ' ||
+          COALESCE(e.event_type, '')) @@ i.tsq
 
     UNION ALL
 
@@ -826,8 +826,8 @@ AS $function$
       l.scheduled_start,
       pg_catalog.ts_rank_cd(
         pg_catalog.to_tsvector('simple'::regconfig,
-          pg_catalog.coalesce(l.title, '') || ' ' ||
-          pg_catalog.coalesce(l.description, '')), i.tsq
+          COALESCE(l.title, '') || ' ' ||
+          COALESCE(l.description, '')), i.tsq
       )::real,
       NULL::boolean
     FROM public.live_sessions l
@@ -837,8 +837,8 @@ AS $function$
       AND l.status IN ('scheduled','live')
       AND l.access_type = 'public'
       AND pg_catalog.to_tsvector('simple'::regconfig,
-          pg_catalog.coalesce(l.title, '') || ' ' ||
-          pg_catalog.coalesce(l.description, '')) @@ i.tsq
+          COALESCE(l.title, '') || ' ' ||
+          COALESCE(l.description, '')) @@ i.tsq
 
     UNION ALL
 
@@ -853,11 +853,11 @@ AS $function$
       l.created_at,
       pg_catalog.ts_rank_cd(
         pg_catalog.to_tsvector('simple'::regconfig,
-          pg_catalog.coalesce(c.title, '') || ' ' ||
-          pg_catalog.coalesce(l.title, '') || ' ' ||
-          pg_catalog.coalesce(l.description, '') || ' ' ||
-          pg_catalog.coalesce(l.content, '') || ' ' ||
-          pg_catalog.coalesce(l.lesson_type, '')), i.tsq
+          COALESCE(c.title, '') || ' ' ||
+          COALESCE(l.title, '') || ' ' ||
+          COALESCE(l.description, '') || ' ' ||
+          COALESCE(l.content, '') || ' ' ||
+          COALESCE(l.lesson_type, '')), i.tsq
       )::real,
       NULL::boolean
     FROM public.course_lessons l
@@ -868,11 +868,38 @@ AS $function$
       AND l.status = 'published'
       AND c.status = 'published'
       AND pg_catalog.to_tsvector('simple'::regconfig,
-          pg_catalog.coalesce(c.title, '') || ' ' ||
-          pg_catalog.coalesce(l.title, '') || ' ' ||
-          pg_catalog.coalesce(l.description, '') || ' ' ||
-          pg_catalog.coalesce(l.content, '') || ' ' ||
-          pg_catalog.coalesce(l.lesson_type, '')) @@ i.tsq
+          COALESCE(c.title, '') || ' ' ||
+          COALESCE(l.title, '') || ' ' ||
+          COALESCE(l.description, '') || ' ' ||
+          COALESCE(l.content, '') || ' ' ||
+          COALESCE(l.lesson_type, '')) @@ i.tsq
+
+    UNION ALL
+
+    SELECT
+      'courses'::text,
+      m.course_id,
+      c.title::text,
+      pg_catalog.left(pg_catalog.concat_ws(' · ', m.title, m.description), 240)::text,
+      c.level::text,
+      m.created_at,
+      pg_catalog.ts_rank_cd(
+        pg_catalog.to_tsvector('simple'::regconfig,
+          COALESCE(c.title, '') || ' ' ||
+          COALESCE(m.title, '') || ' ' ||
+          COALESCE(m.description, '')), i.tsq
+      )::real,
+      NULL::boolean
+    FROM public.course_modules m
+    JOIN public.courses c ON c.id = m.course_id
+    CROSS JOIN input i
+    WHERE pg_catalog.char_length(i.needle) >= 2 AND i.tsq IS NOT NULL
+      AND (p_type IS NULL OR p_type = 'courses')
+      AND c.status = 'published'
+      AND pg_catalog.to_tsvector('simple'::regconfig,
+          COALESCE(c.title, '') || ' ' ||
+          COALESCE(m.title, '') || ' ' ||
+          COALESCE(m.description, '')) @@ i.tsq
 
     UNION ALL
 
@@ -885,10 +912,10 @@ AS $function$
       ch.created_at,
       pg_catalog.ts_rank_cd(
         pg_catalog.to_tsvector('simple'::regconfig,
-          pg_catalog.coalesce(ch.slug, '') || ' ' ||
-          pg_catalog.coalesce(ch.title, '') || ' ' ||
-          pg_catalog.coalesce(ch.description, '') || ' ' ||
-          pg_catalog.coalesce(ch.level, '')), i.tsq
+          COALESCE(ch.slug, '') || ' ' ||
+          COALESCE(ch.title, '') || ' ' ||
+          COALESCE(ch.description, '') || ' ' ||
+          COALESCE(ch.level, '')), i.tsq
       )::real,
       NULL::boolean
     FROM public.study_channels ch
@@ -896,10 +923,10 @@ AS $function$
     WHERE pg_catalog.char_length(i.needle) >= 2 AND i.tsq IS NOT NULL
       AND (p_type IS NULL OR p_type = 'study_channels')
       AND pg_catalog.to_tsvector('simple'::regconfig,
-          pg_catalog.coalesce(ch.slug, '') || ' ' ||
-          pg_catalog.coalesce(ch.title, '') || ' ' ||
-          pg_catalog.coalesce(ch.description, '') || ' ' ||
-          pg_catalog.coalesce(ch.level, '')) @@ i.tsq
+          COALESCE(ch.slug, '') || ' ' ||
+          COALESCE(ch.title, '') || ' ' ||
+          COALESCE(ch.description, '') || ' ' ||
+          COALESCE(ch.level, '')) @@ i.tsq
   ),
   combined AS (
     SELECT * FROM base_results
