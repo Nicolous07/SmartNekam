@@ -27,7 +27,5 @@ ON CONFLICT (id) DO UPDATE SET
   file_size_limit = 10485760,
   allowed_mime_types = EXCLUDED.allowed_mime_types;
 
-COMMENT ON TABLE storage.buckets IS
-  'Supabase Storage bucket definitions. SmartNekam post-attachments permits image, document, and short-video attachments at 10 MB each.';
 
 COMMIT;
