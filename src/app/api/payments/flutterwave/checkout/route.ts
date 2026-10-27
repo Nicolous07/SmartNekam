@@ -39,6 +39,7 @@ export async function POST(request: Request) {
     !process.env.NEXT_PUBLIC_SUPABASE_URL ? 'NEXT_PUBLIC_SUPABASE_URL' : null,
     !process.env.SUPABASE_SERVICE_ROLE_KEY ? 'SUPABASE_SERVICE_ROLE_KEY' : null,
     !process.env.FLW_SECRET_KEY ? 'FLW_SECRET_KEY' : null,
+    !process.env.FLW_SECRET_HASH ? 'FLW_SECRET_HASH' : null,
   ].filter((item): item is string => Boolean(item))
 
   if (missingSettings.length) {
@@ -47,7 +48,7 @@ export async function POST(request: Request) {
     }, { status: 503 })
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL!.replace(/\\/+$/, '')
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL!.replace(/\/+$/, '')
 
   try {
     const admin = createPaymentsAdminClient()
