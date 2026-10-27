@@ -13,7 +13,9 @@ CREATE TABLE IF NOT EXISTS public.subscription_plans (
   is_active boolean NOT NULL DEFAULT true,
   display_order integer NOT NULL DEFAULT 0,
   description text NOT NULL DEFAULT '',
-  created_at timestamptz NOT NULL DEFAULT now()
+  features jsonb NOT NULL DEFAULT '{}'::jsonb,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
 );
 
 ALTER TABLE public.subscription_plans ADD COLUMN IF NOT EXISTS name text;
@@ -24,7 +26,9 @@ ALTER TABLE public.subscription_plans ADD COLUMN IF NOT EXISTS billing_interval 
 ALTER TABLE public.subscription_plans ADD COLUMN IF NOT EXISTS is_active boolean NOT NULL DEFAULT true;
 ALTER TABLE public.subscription_plans ADD COLUMN IF NOT EXISTS display_order integer NOT NULL DEFAULT 0;
 ALTER TABLE public.subscription_plans ADD COLUMN IF NOT EXISTS description text NOT NULL DEFAULT '';
+ALTER TABLE public.subscription_plans ADD COLUMN IF NOT EXISTS features jsonb NOT NULL DEFAULT '{}'::jsonb;
 ALTER TABLE public.subscription_plans ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT now();
+ALTER TABLE public.subscription_plans ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now();
 
 CREATE UNIQUE INDEX IF NOT EXISTS subscription_plans_slug_uidx ON public.subscription_plans(slug);
 
@@ -35,13 +39,13 @@ ALTER TABLE public.subscription_plans
   ADD CONSTRAINT subscription_plans_interval_check
   CHECK (billing_interval IN ('daily', 'weekly', 'monthly', 'quarterly', 'annual', 'yearly', 'one_time'));
 
-INSERT INTO public.subscription_plans(name, slug, price, currency, billing_interval, is_active, display_order, description)
+INSERT INTO public.subscription_plans(name, slug, price, currency, billing_interval, is_active, display_order, description, features)
 VALUES
-  ('SmartNekam Pro — Daily', 'smartnekam-pro-daily', 500, 'TZS', 'daily', true, 1, 'Ufikiaji wa Pro kwa siku moja.'),
-  ('SmartNekam Pro — Weekly', 'smartnekam-pro-weekly', 1500, 'TZS', 'weekly', true, 2, 'Ufikiaji wa Pro kwa siku saba.'),
-  ('SmartNekam Pro — Monthly', 'smartnekam-pro-monthly', 3000, 'TZS', 'monthly', true, 3, 'Mpango wa Pro wa mwezi mmoja.'),
-  ('SmartNekam Pro — 3 Months', 'smartnekam-pro-quarterly', 8000, 'TZS', 'quarterly', true, 4, 'Ufikiaji wa Pro kwa miezi mitatu.'),
-  ('SmartNekam Pro — Yearly', 'smartnekam-pro-yearly', 25000, 'TZS', 'yearly', true, 5, 'Ufikiaji wa Pro kwa mwaka mmoja.')
+  ('SmartNekam Pro — Daily', 'smartnekam-pro-daily', 500, 'TZS', 'daily', true, 1, 'Ufikiaji wa Pro kwa siku moja.', '{"access":"pro","features":["premium_courses"]}'::jsonb),
+  ('SmartNekam Pro — Weekly', 'smartnekam-pro-weekly', 1500, 'TZS', 'weekly', true, 2, 'Ufikiaji wa Pro kwa siku saba.', '{"access":"pro","features":["premium_courses"]}'::jsonb),
+  ('SmartNekam Pro — Monthly', 'smartnekam-pro-monthly', 3000, 'TZS', 'monthly', true, 3, 'Mpango wa Pro wa mwezi mmoja.', '{"access":"pro","features":["premium_courses"]}'::jsonb),
+  ('SmartNekam Pro — 3 Months', 'smartnekam-pro-quarterly', 8000, 'TZS', 'quarterly', true, 4, 'Ufikiaji wa Pro kwa miezi mitatu.', '{"access":"pro","features":["premium_courses"]}'::jsonb),
+  ('SmartNekam Pro — Yearly', 'smartnekam-pro-yearly', 25000, 'TZS', 'yearly', true, 5, 'Ufikiaji wa Pro kwa mwaka mmoja.', '{"access":"pro","features":["premium_courses"]}'::jsonb)
 ON CONFLICT (slug) DO UPDATE SET
   name = EXCLUDED.name,
   price = EXCLUDED.price,
@@ -49,7 +53,9 @@ ON CONFLICT (slug) DO UPDATE SET
   billing_interval = EXCLUDED.billing_interval,
   is_active = EXCLUDED.is_active,
   display_order = EXCLUDED.display_order,
-  description = EXCLUDED.description;
+  description = EXCLUDED.description,
+  features = EXCLUDED.features,
+  updated_at = pg_catalog.now();
 
 CREATE TABLE IF NOT EXISTS public.payment_transactions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -86,6 +92,13 @@ CREATE UNIQUE INDEX IF NOT EXISTS payment_transactions_provider_reference_uidx
 CREATE UNIQUE INDEX IF NOT EXISTS payment_transactions_provider_transaction_uidx
   ON public.payment_transactions(provider, provider_transaction_id)
   WHERE provider_transaction_id IS NOT NULL;
+
+-- SQL 011 records provider events and only allowed a fixed list before this upgrade.
+ALTER TABLE public.payment_provider_events
+  DROP CONSTRAINT IF EXISTS payment_provider_events_provider_check;
+ALTER TABLE public.payment_provider_events
+  ADD CONSTRAINT payment_provider_events_provider_check
+  CHECK (provider IN ('mpesa', 'tigopesa', 'airtel_money', 'stripe', 'bank_transfer', 'manual', 'flutterwave'));
 
 CREATE TABLE IF NOT EXISTS public.user_subscriptions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -199,6 +212,12 @@ BEGIN
       paid_at = pg_catalog.now(),
       provider_transaction_id = p_provider_transaction_id
   WHERE id = v_tx.id;
+
+  UPDATE public.user_subscriptions
+  SET status = 'expired'
+  WHERE profile_id = v_tx.profile_id
+    AND status IN ('active', 'trialing')
+    AND (current_period_end IS NULL OR current_period_end <= pg_catalog.now());
 
   SELECT s.id, s.current_period_end
     INTO v_subscription_id, v_current_period_end
@@ -315,6 +334,12 @@ BEGIN
   IF v_plan_id IS NULL THEN
     RAISE EXCEPTION 'Plan ya zawadi haijapatikana.' USING ERRCODE = 'P0002';
   END IF;
+
+  UPDATE public.user_subscriptions
+  SET status = 'expired'
+  WHERE profile_id = v_user_id
+    AND status IN ('active', 'trialing')
+    AND (current_period_end IS NULL OR current_period_end <= pg_catalog.now());
 
   SELECT s.id, s.current_period_end
     INTO v_subscription_id, v_current_period_end
