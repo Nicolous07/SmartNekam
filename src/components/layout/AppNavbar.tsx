@@ -13,6 +13,7 @@ import {
 import ThemeToggle from './ThemeToggle'
 import SearchDialog from './SearchDialog'
 import { createClient } from '@/lib/supabase/client'
+import { SMARTNEKAM_PAYMENTS_ENABLED } from '@/lib/payments/feature'
 
 export type NavProfile = {
   id: string
@@ -120,7 +121,7 @@ export default function AppNavbar({ profile, isAdmin = false }: { profile: NavPr
     { href: '/learn/flashcards', label: 'Flashcards', icon: BrainCircuit },
     { href: '/applications', label: 'Maombi yangu', icon: FileText },
     { href: '/notifications', label: 'Taarifa', icon: Bell },
-    { href: '/wallet', label: 'Wallet', icon: Wallet },
+    ...(SMARTNEKAM_PAYMENTS_ENABLED ? [{ href: '/wallet', label: 'Wallet', icon: Wallet }] : []),
     { href: '/profile', label: 'Profile na settings', icon: UserRound },
     ...(isAdmin ? [{ href: '/admin', label: 'Admin panel', icon: ShieldCheck }] : []),
   ]
@@ -148,7 +149,7 @@ export default function AppNavbar({ profile, isAdmin = false }: { profile: NavPr
             </div>
             <Link href="/notifications" aria-label="Taarifa" title="Taarifa" className="hidden rounded-xl p-2 text-slate-600 transition hover:bg-emerald-50 hover:text-emerald-700 lg:inline-flex dark:text-slate-300 dark:hover:bg-slate-800"><span className="relative inline-flex"><Bell className="h-4.5 w-4.5" />{unreadNotifications > 0 && <span className="absolute -right-2 -top-2 min-w-4 rounded-full bg-rose-600 px-1 text-center text-[9px] font-black leading-4 text-white">{unreadNotifications > 99 ? '99+' : unreadNotifications}</span>}</span></Link>
             <span className="hidden items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-extrabold text-emerald-800 lg:flex dark:bg-emerald-950 dark:text-emerald-200"><Flame className="h-3.5 w-3.5" />{profile.streak}</span>
-            <Link href="/profile#wallet" title="XP na coins" className="hidden items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-extrabold text-amber-800 lg:flex dark:bg-amber-950 dark:text-amber-200"><span>XP</span>{profile.xp}</Link>
+            <Link href="/profile" title="XP na coins" className="hidden items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-extrabold text-amber-800 lg:flex dark:bg-amber-950 dark:text-amber-200"><span>XP</span>{profile.xp}</Link>
             <span className="hidden lg:block"><ThemeToggle /></span>
             <Link href="/profile" aria-label="Fungua profile" className={`hidden lg:flex items-center gap-2 rounded-full py-0.5 pl-0.5 pr-1 transition xl:pr-3 ${isActive('/profile') ? 'bg-emerald-100 dark:bg-emerald-950' : 'hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
               <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-emerald-500 to-emerald-800 text-xs font-extrabold text-white ring-2 ring-emerald-200 dark:ring-emerald-900">{profile.avatar_url ? <img src={profile.avatar_url} alt="Picha ya profile" className="h-full w-full object-cover" /> : initials(profile.full_name)}</span>
