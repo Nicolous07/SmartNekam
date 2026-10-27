@@ -925,3 +925,26 @@ html.amoled .sn-chat-stage {
 .sn-chat-message-bubble-mine [class*="border-emerald-500"] {
   border-color: #c4c9ce !important;
 }
+
+
+/* Keep sidebar tools legible against the dark metallic inbox panel. */
+.sn-chat-sidebar .text-slate-900,
+.sn-chat-sidebar .text-slate-800,
+.sn-chat-sidebar .text-slate-700 {
+  color: #f1f3f5 !important;
+}
+.sn-chat-sidebar .bg-white {
+  background: linear-gradient(160deg, #f8f9fa, #e3e6e8) !important;
+  color: #252a2f !important;
+}
+.sn-chat-sidebar input:not([placeholder="Tafuta username..."]),
+.sn-chat-sidebar textarea,
+.sn-chat-sidebar select {
+  color: #252a2f !important;
+  background-color: #f5f6f7 !important;
+  border-color: #c4c9ce !important;
+}
+.sn-chat-sidebar input:not([placeholder="Tafuta username..."])::placeholder,
+.sn-chat-sidebar textarea::placeholder {
+  color: #737a80 !important;
+}
