@@ -70,6 +70,7 @@ export async function POST(request: Request) {
       amount: Number(plan.price),
       currency: plan.currency,
       provider_reference: txRef,
+      idempotency_key: randomUUID(),
       subscription_plan_id: plan.id,
       description: plan.name,
     })
