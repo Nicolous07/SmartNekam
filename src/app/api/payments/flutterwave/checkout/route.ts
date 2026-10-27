@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createPaymentsAdminClient } from '@/lib/payments/flutterwave'
+import { SMARTNEKAM_PAYMENTS_ENABLED } from '@/lib/payments/feature'
 
 export const runtime = 'nodejs'
 
@@ -14,6 +15,10 @@ const ALLOWED_PLAN_SLUGS = new Set([
 ])
 
 export async function POST(request: Request) {
+  if (!SMARTNEKAM_PAYMENTS_ENABLED) {
+    return NextResponse.json({ error: 'Mfumo wa malipo umezimwa kwa muda.' }, { status: 503 })
+  }
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
