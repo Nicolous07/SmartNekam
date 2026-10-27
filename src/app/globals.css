@@ -1537,3 +1537,31 @@ html.dark .sn-chat-send:disabled {
     padding-right: 13px !important;
   }
 }
+
+
+/* Final contrast pass for the new SmartNekam blue-violet bubbles. */
+.sn-chat-message-bubble-mine > p.whitespace-pre-wrap {
+  color: #ffffff !important;
+}
+.sn-chat-message-bubble-mine .sn-chat-message-meta,
+.sn-chat-message-bubble-mine .sn-chat-message-actions,
+.sn-chat-message-bubble-mine .sn-chat-message-heading {
+  color: #eef1ff !important;
+}
+.sn-chat-message-bubble-mine .sn-chat-message-actions button:hover {
+  background: rgba(255,255,255,.17) !important;
+}
+.sn-chat-message-bubble-mine .sn-chat-message-actions .bg-white,
+.sn-chat-message-bubble-mine .sn-chat-message-actions .bg-black\/5 {
+  color: #ffffff !important;
+  background: rgba(255,255,255,.18) !important;
+}
+.sn-chat-message-bubble-mine a.text-white {
+  color: #ffffff !important;
+}
+.sn-chat-message-bubble-other > p.whitespace-pre-wrap {
+  color: #101728 !important;
+}
+html.dark .sn-chat-message-bubble-other > p.whitespace-pre-wrap {
+  color: #f4f6fb !important;
+}
