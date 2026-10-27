@@ -28,6 +28,13 @@ ALTER TABLE public.subscription_plans ADD COLUMN IF NOT EXISTS created_at timest
 
 CREATE UNIQUE INDEX IF NOT EXISTS subscription_plans_slug_uidx ON public.subscription_plans(slug);
 
+-- Extend the interval constraint from SQL 011 while preserving its existing values.
+ALTER TABLE public.subscription_plans
+  DROP CONSTRAINT IF EXISTS subscription_plans_interval_check;
+ALTER TABLE public.subscription_plans
+  ADD CONSTRAINT subscription_plans_interval_check
+  CHECK (billing_interval IN ('daily', 'weekly', 'monthly', 'quarterly', 'annual', 'yearly', 'one_time'));
+
 INSERT INTO public.subscription_plans(name, slug, price, currency, billing_interval, is_active, display_order, description)
 VALUES
   ('SmartNekam Pro — Daily', 'smartnekam-pro-daily', 500, 'TZS', 'daily', true, 1, 'Ufikiaji wa Pro kwa siku moja.'),
@@ -59,6 +66,20 @@ CREATE TABLE IF NOT EXISTS public.payment_transactions (
 );
 ALTER TABLE public.payment_transactions ADD COLUMN IF NOT EXISTS subscription_plan_id uuid REFERENCES public.subscription_plans(id) ON DELETE SET NULL;
 ALTER TABLE public.payment_transactions ADD COLUMN IF NOT EXISTS provider_transaction_id text;
+ALTER TABLE public.payment_transactions ADD COLUMN IF NOT EXISTS idempotency_key uuid DEFAULT gen_random_uuid();
+
+-- SQL 011 permits a fixed provider/status set; extend it for Flutterwave.
+ALTER TABLE public.payment_transactions
+  DROP CONSTRAINT IF EXISTS payment_transactions_provider_check;
+ALTER TABLE public.payment_transactions
+  ADD CONSTRAINT payment_transactions_provider_check
+  CHECK (provider IN ('mpesa', 'tigopesa', 'airtel_money', 'stripe', 'bank_transfer', 'manual', 'flutterwave'));
+
+ALTER TABLE public.payment_transactions
+  DROP CONSTRAINT IF EXISTS payment_transactions_status_check;
+ALTER TABLE public.payment_transactions
+  ADD CONSTRAINT payment_transactions_status_check
+  CHECK (status IN ('pending', 'processing', 'succeeded', 'failed', 'cancelled', 'refunded'));
 CREATE UNIQUE INDEX IF NOT EXISTS payment_transactions_provider_reference_uidx
   ON public.payment_transactions(provider, provider_reference)
   WHERE provider_reference IS NOT NULL;
@@ -152,7 +173,7 @@ BEGIN
     RAISE EXCEPTION 'Payment reference haijapatikana.' USING ERRCODE = 'P0002';
   END IF;
 
-  IF v_tx.status = 'successful' THEN
+  IF v_tx.status = 'succeeded' THEN
     RETURN pg_catalog.jsonb_build_object('success', true, 'already_processed', true);
   END IF;
 
@@ -174,7 +195,7 @@ BEGIN
   END IF;
 
   UPDATE public.payment_transactions
-  SET status = 'successful',
+  SET status = 'succeeded',
       paid_at = pg_catalog.now(),
       provider_transaction_id = p_provider_transaction_id
   WHERE id = v_tx.id;
