@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Wallet, Crown, Gift, Copy, Check, CreditCard } from 'lucide-react'
 import { getLevel } from '@/lib/levels'
+import { SMARTNEKAM_PAYMENTS_ENABLED } from '@/lib/payments/feature'
 
 export default function WalletCard({
   points,
@@ -100,6 +101,7 @@ export default function WalletCard({
           </div>
         )}
 
+        {SMARTNEKAM_PAYMENTS_ENABLED && <>
         {/* Kununua pointi */}
         <button
           type="button"
@@ -108,6 +110,7 @@ export default function WalletCard({
         >
           <CreditCard className="h-4 w-4" /> Nunua EduPoints (M-Pesa, Tigo Pesa) · Inakuja hivi karibuni
         </button>
+        </>}
       </div>
     </section>
   )
