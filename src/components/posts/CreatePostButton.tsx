@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Plus, X, ImagePlus, Loader2, Table2, Eye, Pencil, EyeOff,
-  Paperclip, FileText, FileImage, File as FileIcon,
+  Paperclip, FileText, FileImage, Video as VideoIcon, File as FileIcon,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import RichContent from '@/components/posts/RichContent'
@@ -26,7 +26,9 @@ const MAX_CHARS = 5000
 const MAX_FILES = 5
 const MAX_FILE_BYTES = 10 * 1024 * 1024
 const ALLOWED_TYPES = new Set([
-  'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf',
+  'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+  'video/mp4', 'video/webm', 'video/quicktime', 'video/3gpp', 'video/x-m4v',
+  'application/pdf',
   'text/plain', 'text/csv', 'application/msword', 'application/vnd.ms-excel',
   'application/vnd.ms-powerpoint',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -100,7 +102,7 @@ export default function CreatePostButton() {
     const accepted: SelectedAttachment[] = []
     for (const file of files) {
       if (!ALLOWED_TYPES.has(file.type)) {
-        setError(`${file.name}: aina hii ya faili hairuhusiwi. Tumia picha, PDF, Word, Excel, PowerPoint, TXT au CSV.`)
+        setError(`${file.name}: aina hii ya faili hairuhusiwi. Tumia picha, video fupi (MP4/WebM/MOV), PDF, Word, Excel, PowerPoint, TXT au CSV.`)
         continue
       }
       if (file.size > MAX_FILE_BYTES) {
@@ -112,7 +114,7 @@ export default function CreatePostButton() {
         break
       }
       if (attachments.some((item) => item.file.name === file.name && item.file.size === file.size) || accepted.some((item) => item.file.name === file.name && item.file.size === file.size)) continue
-      accepted.push({ file, previewUrl: file.type.startsWith('image/') ? URL.createObjectURL(file) : null })
+      accepted.push({ file, previewUrl: file.type.startsWith('image/') || file.type.startsWith('video/') ? URL.createObjectURL(file) : null })
     }
     if (accepted.length) setAttachments((current) => [...current, ...accepted].slice(0, MAX_FILES))
     e.target.value = ''
@@ -192,9 +194,9 @@ export default function CreatePostButton() {
             <div className="mt-1 flex items-center justify-between gap-2 text-[11px] text-slate-400"><span>Tumia maandishi rahisi, mistari au jedwali ili ujumbe wako ueleweke kwa urahisi.</span><span className="shrink-0">{content.length}/{MAX_CHARS}</span></div>
           </div>
 
-          <section className="rounded-2xl border border-dashed border-emerald-300 bg-emerald-50/50 p-3 dark:border-emerald-900 dark:bg-emerald-950/20"><div className="flex flex-wrap items-center justify-between gap-3"><div className="flex items-start gap-2.5"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200"><Paperclip className="h-5 w-5"/></span><div><p className="text-sm font-extrabold text-slate-900 dark:text-white">Attachments / Viambatisho</p><p className="mt-0.5 text-xs leading-5 text-slate-500">Picha, PDF, Word, Excel, PowerPoint, TXT au CSV · hadi 5 files, 10 MB kila moja.</p></div></div><button type="button" onClick={() => fileRef.current?.click()} disabled={attachments.length >= MAX_FILES || busy} className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2.5 text-xs font-extrabold text-emerald-800 shadow-sm ring-1 ring-emerald-200 transition hover:bg-emerald-100 disabled:opacity-50 dark:bg-slate-900 dark:text-emerald-200 dark:ring-emerald-900"><Plus className="h-4 w-4"/> Ambatisha faili</button></div>
-            <input ref={fileRef} type="file" multiple accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,text/plain,text/csv,application/msword,application/vnd.ms-excel,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.openxmlformats-officedocument.presentationml.presentation" onChange={onPickAttachments} className="hidden"/>
-            {attachments.length > 0 && <div className="mt-3 grid gap-2 sm:grid-cols-2">{attachments.map((item, index) => <div key={`${item.file.name}-${item.file.size}-${index}`} className="flex min-w-0 items-center gap-3 rounded-xl border border-emerald-100 bg-white p-2.5 dark:border-slate-800 dark:bg-slate-900">{item.previewUrl ? <img src={item.previewUrl} alt={`Preview ${item.file.name}`} className="h-12 w-12 shrink-0 rounded-lg object-cover"/> : <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-emerald-700 dark:bg-slate-800 dark:text-emerald-200">{item.file.type.startsWith('image/') ? <FileImage className="h-5 w-5"/> : item.file.type === 'application/pdf' ? <FileText className="h-5 w-5"/> : <FileIcon className="h-5 w-5"/>}</span>}<span className="min-w-0 flex-1"><span className="block truncate text-xs font-extrabold text-slate-900 dark:text-white">{item.file.name}</span><span className="mt-1 block text-[10px] text-slate-500">{formatBytes(item.file.size)}</span></span><button type="button" onClick={() => removeAttachment(index)} disabled={busy} aria-label={`Ondoa ${item.file.name}`} className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950"><X className="h-4 w-4"/></button></div>)}</div>}
+          <section className="rounded-2xl border border-dashed border-emerald-300 bg-emerald-50/50 p-3 dark:border-emerald-900 dark:bg-emerald-950/20"><div className="flex flex-wrap items-center justify-between gap-3"><div className="flex items-start gap-2.5"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200"><Paperclip className="h-5 w-5"/></span><div><p className="text-sm font-extrabold text-slate-900 dark:text-white">Attachments / Viambatisho</p><p className="mt-0.5 text-xs leading-5 text-slate-500">Picha na video fupi (MP4, WebM, MOV), PDF, Word, Excel, PowerPoint, TXT au CSV · hadi faili 5, 10 MB kila moja.</p></div></div><button type="button" onClick={() => fileRef.current?.click()} disabled={attachments.length >= MAX_FILES || busy} className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2.5 text-xs font-extrabold text-emerald-800 shadow-sm ring-1 ring-emerald-200 transition hover:bg-emerald-100 disabled:opacity-50 dark:bg-slate-900 dark:text-emerald-200 dark:ring-emerald-900"><Plus className="h-4 w-4"/> Ambatisha faili</button></div>
+            <input ref={fileRef} type="file" multiple accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime,video/3gpp,video/x-m4v,application/pdf,text/plain,text/csv,application/msword,application/vnd.ms-excel,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.openxmlformats-officedocument.presentationml.presentation" onChange={onPickAttachments} className="hidden"/>
+            {attachments.length > 0 && <div className="mt-3 grid gap-2 sm:grid-cols-2">{attachments.map((item, index) => <div key={`${item.file.name}-${item.file.size}-${index}`} className="flex min-w-0 items-center gap-3 rounded-xl border border-emerald-100 bg-white p-2.5 dark:border-slate-800 dark:bg-slate-900">{item.file.type.startsWith('image/') && item.previewUrl ? <img src={item.previewUrl} alt={`Preview ${item.file.name}`} className="h-12 w-12 shrink-0 rounded-lg object-cover"/> : item.file.type.startsWith('video/') && item.previewUrl ? <video src={item.previewUrl} aria-label={`Preview ${item.file.name}`} muted playsInline preload="metadata" controls className="h-12 w-16 shrink-0 rounded-lg bg-black object-cover"/> : <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-emerald-700 dark:bg-slate-800 dark:text-emerald-200">{item.file.type.startsWith('video/') ? <VideoIcon className="h-5 w-5"/> : item.file.type.startsWith('image/') ? <FileImage className="h-5 w-5"/> : item.file.type === 'application/pdf' ? <FileText className="h-5 w-5"/> : <FileIcon className="h-5 w-5"/>}</span>}<span className="min-w-0 flex-1"><span className="block truncate text-xs font-extrabold text-slate-900 dark:text-white">{item.file.name}</span><span className="mt-1 block text-[10px] text-slate-500">{formatBytes(item.file.size)}</span></span><button type="button" onClick={() => removeAttachment(index)} disabled={busy} aria-label={`Ondoa ${item.file.name}`} className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950"><X className="h-4 w-4"/></button></div>)}</div>}
           </section>
 
           {error && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">{error}</p>}
