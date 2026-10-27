@@ -899,3 +899,29 @@ html.amoled .sn-chat-stage {
 @media (prefers-reduced-motion: reduce) {
   .sn-chat-message-row { animation: none !important; }
 }
+
+
+/* Fine tune monochrome conversation details for the glossy message cards. */
+.sn-chat-topbar .bg-lime-300 {
+  background: #dfe3e6 !important;
+  box-shadow: 0 0 0 3px rgba(222, 227, 231, 0.13), 0 0 12px rgba(255,255,255,0.24);
+}
+.sn-chat-topbar .border-white\/20 {
+  border-color: rgba(235, 239, 243, 0.25) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+.sn-chat-layout {
+  background: #1b2025;
+}
+.sn-chat-message-bubble-mine .text-emerald-100,
+.sn-chat-message-bubble-mine a.text-white {
+  color: #626970 !important;
+}
+.sn-chat-message-bubble-other .text-emerald-100,
+.sn-chat-message-bubble-other a.text-white {
+  color: #f1f3f5 !important;
+}
+.sn-chat-message-bubble-mine [class*="border-emerald-100"],
+.sn-chat-message-bubble-mine [class*="border-emerald-500"] {
+  border-color: #c4c9ce !important;
+}
