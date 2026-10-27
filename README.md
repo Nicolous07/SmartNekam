@@ -66,3 +66,7 @@ Run SQL 023 after SQL 022, then follow `UPGRADE-023-TANZANIA-INSTITUTIONS-SW.md`
 ## Notifications mpya — SQL 033
 
 Tumia `PUSH-NOTIFICATIONS-SETUP-SW.md` kwa hatua za notifications za ndani ya app na push za simu/PC. SQL 037 (`sql/037_smartnekam_incoming_call_notifications.sql`) inaunganisha incoming-call offers na notification za app/kifaa baada ya SQL 033 na 036. Endesha `sql/033_smartnekam_push_and_message_notifications.sql` baada ya SQL 003, 006 na 007. Kwa push hata browser/tab ikiwa imefungwa, deploy `supabase/functions/smartnekam-push`, weka VAPID secrets, na unda Database Webhook ya `public.notifications` INSERT. Watumiaji pia wanapaswa kuwasha push kupitia ukurasa wa **Taarifa**.
+
+## SmartNekam Pro + XP Rewards — SQL 048
+
+Tumia `UPGRADE-048-PRO-FLUTTERWAVE-XP-SW.md` kwa setup ya Pro subscriptions, Flutterwave checkout/callback/webhook na zawadi za Pro zinazodaiwa kwa XP. Endesha `sql/048_smartnekam_pro_flutterwave_xp_rewards.sql` kwa mikono kwenye Supabase SQL Editor, kisha weka `FLW_SECRET_KEY` na `FLW_SECRET_HASH` server-side kwenye Vercel. Hifadhi service-role key kwenye server pekee. Kuhifadhi code GitHub hakumaanishi SQL imeendeshwa au deployment imekamilika.
