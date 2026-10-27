@@ -4,6 +4,7 @@ import { ArrowLeft, BookMarked, BookOpen, FileText, ShieldCheck } from 'lucide-r
 import { createClient } from '@/lib/supabase/server'
 import SmartNekamDownloadButton from '@/components/library/SmartNekamDownloadButton'
 import SmartNekamResourceReader from '@/components/library/SmartNekamResourceReader'
+import { SMARTNEKAM_PAYMENTS_ENABLED } from '@/lib/payments/feature'
 
 type ResourceRow = {
   id: string
@@ -93,7 +94,7 @@ export default async function LibraryDetailPage({ params, searchParams }: { para
 
     {row.status === 'approved' ? <div className="grid gap-3 sm:grid-cols-2">
       <SmartNekamDownloadButton id={row.id} type={kind} storagePath={row.storage_path} fileName={`${row.title}.${row.file_type}`} />
-      {kind === 'past_papers' && row.marking_scheme_path && (hasProAccess ? <SmartNekamDownloadButton id={row.id} type="past_papers" storagePath={row.marking_scheme_path} fileName={`${row.title}-marking-scheme.pdf`} /> : <Link href="/premium" className="flex items-center justify-center rounded-xl border border-amber-300 bg-amber-50 px-3 py-2.5 text-sm font-extrabold text-amber-900 hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100">Fungua marking scheme kwa SmartNekam Pro</Link>)}
+      {kind === 'past_papers' && row.marking_scheme_path && (hasProAccess ? <SmartNekamDownloadButton id={row.id} type="past_papers" storagePath={row.marking_scheme_path} fileName={`${row.title}-marking-scheme.pdf`} /> : SMARTNEKAM_PAYMENTS_ENABLED ? <Link href="/premium" className="flex items-center justify-center rounded-xl border border-amber-300 bg-amber-50 px-3 py-2.5 text-sm font-extrabold text-amber-900 hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100">Fungua marking scheme kwa SmartNekam Pro</Link> : null)}
     </div> : <p className="text-sm text-slate-500">Download itawezeshwa baada ya moderator kuidhinisha nyenzo.</p>}
   </div>
 }
