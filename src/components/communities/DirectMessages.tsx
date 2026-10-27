@@ -82,7 +82,7 @@ function initials(name: string) {
 }
 
 function Avatar({ name, url, size = 'h-11 w-11' }: { name: string; url: string | null; size?: string }) {
-  return <span className={`${size} flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-emerald-700 font-extrabold text-white`}>
+  return <span className={`${size} sn-chat-avatar flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-emerald-700 font-extrabold text-white`}>
     {url ? <img src={url} alt="" className="h-full w-full object-cover" /> : initials(name)}
   </span>
 }
@@ -1017,11 +1017,11 @@ export default function DirectMessages() {
   const showingSearch = search.trim().replace(/^@/, '').length >= 2
 
   const chatContainerClass = selectedId
-    ? 'fixed inset-0 z-[100] flex h-[100dvh] w-screen flex-col overflow-hidden rounded-none border-0 bg-white shadow-none dark:bg-[#071b1d] md:static md:h-auto md:w-auto md:flex-none md:rounded-[28px] md:border md:border-emerald-900/30 md:shadow-[0_24px_80px_-36px_rgba(5,150,105,0.42)]'
-    : 'overflow-hidden rounded-[28px] border border-emerald-900/30 bg-white shadow-[0_24px_80px_-36px_rgba(5,150,105,0.42)] dark:border-slate-800 dark:bg-[#071b1d]'
+    ? 'sn-chat-shell sn-chat-shell-active fixed inset-0 z-[100] flex h-[100dvh] w-screen flex-col overflow-hidden rounded-none border-0 md:static md:h-auto md:w-auto md:flex-none md:rounded-[28px] md:border'
+    : 'sn-chat-shell overflow-hidden rounded-[28px] border'
 
   return <section className={chatContainerClass}>
-    <div className={`${selectedId ? 'hidden md:flex' : 'flex'} relative items-center justify-between overflow-hidden border-b border-[#135b4d] bg-gradient-to-r from-[#071f22] via-[#0d3b39] to-[#08734f] px-4 py-4 text-white sm:px-5`}>
+    <div className={`${selectedId ? 'hidden md:flex' : 'flex'} sn-chat-topbar relative items-center justify-between overflow-hidden border-b px-4 py-4 text-white sm:px-5`}>
       <div className="pointer-events-none absolute -right-6 -top-12 h-32 w-32 rounded-full border-[18px] border-white/10" />
       <div className="relative">
         <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-emerald-100">SmartNekam · Connect</p>
@@ -1031,8 +1031,8 @@ export default function DirectMessages() {
       <span className="relative flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[10px] font-extrabold backdrop-blur-sm sm:text-xs"><span className="h-2 w-2 rounded-full bg-lime-300" /> Private chats</span>
     </div>
 
-    <div className={`${selectedId ? 'flex-1 h-full min-h-0 max-h-none md:h-[76dvh] md:min-h-[520px] md:max-h-[900px] md:flex-none' : 'h-[76dvh] min-h-[520px] max-h-[900px]'} grid grid-cols-1 md:grid-cols-[310px_minmax(0,1fr)]`}>
-      <aside className={`${selectedId ? 'hidden md:flex' : 'flex'} min-h-0 flex-col border-r border-emerald-900/40 bg-[#071b1d] text-white dark:border-slate-800`}>
+    <div className={`${selectedId ? 'flex-1 h-full min-h-0 max-h-none md:h-[76dvh] md:min-h-[520px] md:max-h-[900px] md:flex-none' : 'h-[76dvh] min-h-[520px] max-h-[900px]'} sn-chat-layout grid grid-cols-1 md:grid-cols-[310px_minmax(0,1fr)]`}>
+      <aside className={`${selectedId ? 'hidden md:flex' : 'flex'} sn-chat-sidebar min-h-0 flex-col border-r text-white`}>
         <div className="border-b border-emerald-900/50 p-3 dark:border-slate-800">
           <label className="flex items-center gap-2 rounded-2xl border border-emerald-900/60 bg-[#102a2c] px-3 dark:border-slate-700 dark:bg-slate-900">
             <Search className="h-4 w-4 shrink-0 text-emerald-700 dark:text-emerald-300" />
@@ -1094,9 +1094,9 @@ export default function DirectMessages() {
         </div>
       </aside>
 
-      <div className={`${selectedId ? 'flex' : 'hidden md:flex'} min-h-0 min-w-0 flex-col overflow-hidden bg-[radial-gradient(ellipse_at_top_left,rgba(16,185,129,0.16),transparent_45%),#0b2224] dark:bg-[radial-gradient(ellipse_at_top_left,rgba(16,185,129,0.12),transparent_45%),#0B0F1A]`}>
+      <div className={`${selectedId ? 'flex' : 'hidden md:flex'} sn-chat-stage min-h-0 min-w-0 flex-col overflow-hidden`}>
         {selectedId && activeConversation ? <>
-          <header className="flex items-center gap-3 border-b border-emerald-900/40 bg-[#0c282a]/95 px-3 py-3 text-white shadow-[0_4px_24px_-20px_rgba(5,150,105,0.7)] backdrop-blur-md dark:border-slate-800 dark:bg-[#121826]/95">
+          <header className="sn-chat-conversation-header flex items-center gap-3 border-b px-3 py-3 text-white backdrop-blur-md">
             <button type="button" onClick={() => { setSelectedId(null); setGroupManagementOpen(false); setGroupInviteOpen(false); setNotice('') }} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-emerald-800/60 bg-[#123536] text-white transition hover:bg-emerald-700 active:scale-95 md:hidden" aria-label="Rudi kwenye chats" title="Rudi kwenye chats"><ArrowLeft className="h-5 w-5" /></button>
             <Avatar name={activeConversation.other_full_name} url={activeConversation.conversation_type === 'group' ? (groupManagement?.settings.icon_url ?? null) : activeConversation.other_avatar_url} size="h-10 w-10" />
             <div className="min-w-0 flex-1"><p className="truncate font-extrabold text-white">{activeConversation.other_full_name}</p><p className="text-xs text-slate-400">{activeConversation.conversation_type === 'group' ? `${activeConversation.group_visibility === 'public' ? 'Public' : 'Private'} group · ${groupManagement?.members.length ?? '…'} members` : activeConversation.conversation_type === 'mentor' ? `Peer mentorship · @${activeConversation.other_username}` : `@${activeConversation.other_username}`}</p></div>
@@ -1142,7 +1142,7 @@ export default function DirectMessages() {
               </div>
             </>}
           </section>}
-          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-3 py-4 [scrollbar-width:thin] sm:px-5">
+          <div className="sn-chat-thread min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-3 py-5 sm:px-5">
             {loadingMessages && !messages.length && <div className="space-y-3"><div className="shimmer-element h-12 w-2/3 rounded-2xl" /><div className="shimmer-element ml-auto h-12 w-1/2 rounded-2xl" /></div>}
             {!loadingMessages && messages.length === 0 && <div className="flex h-full min-h-56 flex-col items-center justify-center text-center"><span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"><MessageCircle className="h-7 w-7" /></span><h3 className="mt-3 font-extrabold text-slate-900 dark:text-white">Anza mazungumzo</h3><p className="mt-1 max-w-xs text-sm text-slate-500">Salimia {activeConversation.other_full_name} na endeleeni kuwasiliana kuhusu masomo.</p></div>}
             {messages.map((message) => {
@@ -1150,9 +1150,9 @@ export default function DirectMessages() {
               const parentMessage = message.reply_to_message_id ? messages.find((candidate) => candidate.id === message.reply_to_message_id) : null
               const messageReactions = reactions.filter((item) => item.message_id === message.id)
               const reactionCounts = QUICK_REACTIONS.map((emoji) => ({ emoji, count: messageReactions.filter((item) => item.reaction === emoji).length, mine: messageReactions.some((item) => item.user_id === myUserId && item.reaction === emoji) })).filter((item) => item.count > 0)
-              return <div key={message.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
-                {!mine && <Avatar name={message.sender_name} url={message.sender_avatar} size="h-7 w-7 mr-2 mt-1" />}
-                <div className={`max-w-[90%] rounded-[22px] px-3.5 py-2.5 shadow-[0_5px_16px_-12px_rgba(15,23,42,0.45)] sm:max-w-[80%] ${mine ? 'rounded-br-md bg-gradient-to-br from-emerald-600 to-emerald-700 text-white' : 'rounded-bl-md border border-emerald-100/90 bg-white/95 text-slate-800 dark:border-slate-800 dark:bg-[#18212b] dark:text-slate-100'}`}>
+              return <div key={message.id} className={`sn-chat-message-row flex items-end gap-3 ${mine ? 'sn-chat-message-row-mine justify-start' : 'sn-chat-message-row-other justify-end'}`}>
+                {mine && <Avatar name={message.sender_name} url={message.sender_avatar} size="h-10 w-10 mr-0 mt-1" />}
+                <div className={`sn-chat-message-bubble max-w-[90%] sm:max-w-[80%] ${mine ? 'sn-chat-message-bubble-mine' : 'sn-chat-message-bubble-other'}`}>
                   {activeConversation.conversation_type === 'group' && <p className={`mb-1 text-[10px] font-extrabold ${mine ? 'text-emerald-100' : 'text-emerald-700 dark:text-emerald-300'}`}>{mine ? 'Wewe' : `${message.sender_name} · @${message.sender_username}`}</p>}
                   {parentMessage && <div className={`mb-2 rounded-lg border-l-2 px-2 py-1 text-xs ${mine ? 'border-emerald-100 bg-emerald-700/50 text-emerald-50' : 'border-emerald-500 bg-emerald-50 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}`}><p className="font-bold">Umejibu {parentMessage.sender_name}</p><p className="line-clamp-2">{parentMessage.body}</p></div>}
                   {message.attachment_path && attachmentUrls[message.attachment_path] && !message.deleted_at && (() => {
@@ -1173,6 +1173,7 @@ export default function DirectMessages() {
                     {(mine || (activeConversation.conversation_type === 'group' && groupManagement?.can_manage)) && <button type="button" title={mine ? 'Futa ujumbe' : 'Admin: Delete for everyone'} onClick={() => void deleteMessage(message)} className="rounded-md p-1 hover:bg-black/10"><Trash2 className="h-3.5 w-3.5" /></button>}
                   </div>}
                 </div>
+                {!mine && <Avatar name={message.sender_name} url={message.sender_avatar} size="h-10 w-10 ml-0 mt-1" />}
               </div>
             })}
             <div ref={bottomRef} />
@@ -1184,11 +1185,11 @@ export default function DirectMessages() {
             {pendingAttachment.type.startsWith('audio/') && pendingAudioPreview && <div className="mt-2 flex items-center gap-2"><FileAudio className="h-4 w-4 shrink-0 text-emerald-700 dark:text-emerald-300"/><audio controls preload="metadata" src={pendingAudioPreview} className="h-9 min-w-0 flex-1"/><span className="shrink-0 text-[10px] font-bold text-emerald-800 dark:text-emerald-200">Sauti</span></div>}
           </div>}
           {(replyTo || editingMessageId) && <div className="flex items-center gap-2 border-t border-emerald-100 bg-emerald-50 px-3 py-2 text-xs dark:border-slate-800 dark:bg-slate-900"><div className="min-w-0 flex-1"><p className="font-extrabold text-emerald-800 dark:text-emerald-200">{editingMessageId ? 'Hariri ujumbe' : `Unamjibu ${replyTo?.sender_name}`}</p><p className="truncate text-slate-500">{editingMessageId ? 'Badili maandishi kisha tuma.' : replyTo?.body}</p></div><button type="button" onClick={() => { setReplyTo(null); setEditingMessageId(null); setDraft('') }} aria-label="Ghairi reply au edit"><X className="h-4 w-4" /></button></div>}
-          <form onSubmit={(e) => { e.preventDefault(); void sendMessage() }} className="flex items-end gap-1.5 border-t border-emerald-900/50 bg-[#071b1d]/95 p-2.5 backdrop-blur-md sm:gap-2 sm:p-3 dark:border-slate-800 dark:bg-[#121826]/95">
+          <form onSubmit={(e) => { e.preventDefault(); void sendMessage() }} className="sn-chat-composer flex items-end gap-1.5 border-t p-2.5 backdrop-blur-md sm:gap-2 sm:p-3">
             <label title="Ambatanisha picha, sauti au faili" className={`flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full border border-emerald-100 text-emerald-700 transition hover:bg-emerald-50 dark:border-slate-700 dark:text-emerald-300 dark:hover:bg-slate-900 ${(!canSendInActiveConversation) || editingMessageId || isRecordingVoice ? 'pointer-events-none opacity-40' : ''}`}><Paperclip className="h-5 w-5"/><input ref={fileInputRef} type="file" className="sr-only" accept="image/*,audio/*,video/*,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt" disabled={(!canSendInActiveConversation) || Boolean(editingMessageId) || isRecordingVoice} onChange={(event) => { const file = event.currentTarget.files?.[0] ?? null; if (file && file.size > 10 * 1024 * 1024) { setNotice('Kiambatisho kisiwe zaidi ya 10 MB.'); event.currentTarget.value = ''; return } setPendingAttachment(file); setNotice(''); event.currentTarget.value = '' }}/></label>
             <button type="button" onClick={() => isRecordingVoice ? stopVoiceRecording() : void startVoiceRecording()} disabled={(!canSendInActiveConversation) || Boolean(editingMessageId) || sending} aria-label={isRecordingVoice ? 'Simamisha kurekodi sauti' : 'Rekodi ujumbe wa sauti'} title={isRecordingVoice ? `Simamisha kurekodi (${recordSeconds}s)` : 'Rekodi ujumbe wa sauti'} className={`relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full border transition active:scale-95 disabled:opacity-40 ${isRecordingVoice ? 'border-red-500 bg-red-600 text-white shadow-lg shadow-red-600/20' : 'border-emerald-100 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-slate-700 dark:bg-slate-900 dark:text-emerald-300'}`}>{isRecordingVoice ? <><Square className="h-4 w-4 fill-current"/><span className="absolute -right-1 -top-1 rounded-full bg-red-600 px-1 text-[9px] font-extrabold text-white">{recordSeconds}s</span></> : <Mic className="h-5 w-5"/>}</button>
-            <textarea value={draft} onChange={(e) => setDraft(e.target.value.slice(0, 4000))} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void sendMessage() } }} rows={1} placeholder={isRecordingVoice ? 'Inarekodi sauti…' : activeConversation.conversation_type === 'group' || activeConversation.can_message ? 'Andika ujumbe...' : 'DM imezuiwa na mipangilio ya faragha'} disabled={isRecordingVoice || (!canSendInActiveConversation)} className="max-h-28 min-h-11 min-w-0 flex-1 resize-y rounded-[22px] border border-emerald-900/60 bg-[#123536] px-4 py-3 text-sm text-white outline-none placeholder:text-slate-400 focus:border-emerald-500 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-white" />
-            <button type="submit" disabled={(!draft.trim() && !pendingAttachment) || sending || isRecordingVoice || (!canSendInActiveConversation)} aria-label="Tuma ujumbe" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white transition hover:bg-emerald-500 active:scale-95 disabled:opacity-40">{sending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}</button>
+            <textarea value={draft} onChange={(e) => setDraft(e.target.value.slice(0, 4000))} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void sendMessage() } }} rows={1} placeholder={isRecordingVoice ? 'Inarekodi sauti…' : activeConversation.conversation_type === 'group' || activeConversation.can_message ? 'Andika ujumbe...' : 'DM imezuiwa na mipangilio ya faragha'} disabled={isRecordingVoice || (!canSendInActiveConversation)} className="sn-chat-composer-input max-h-28 min-h-11 min-w-0 flex-1 resize-y rounded-[22px] border px-4 py-3 text-sm outline-none placeholder:text-slate-400 disabled:opacity-60" />
+            <button type="submit" disabled={(!draft.trim() && !pendingAttachment) || sending || isRecordingVoice || (!canSendInActiveConversation)} aria-label="Tuma ujumbe" className="sn-chat-send flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition active:scale-95 disabled:opacity-40">{sending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}</button>
           </form>
         </> : <div className="flex flex-1 flex-col items-center justify-center px-8 text-center"><span className="flex h-20 w-20 items-center justify-center rounded-3xl bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"><CircleUserRound className="h-10 w-10" /></span><h3 className="mt-4 text-xl font-extrabold text-slate-950 dark:text-white">Chat ya SmartNekam</h3><p className="mt-2 max-w-sm text-sm leading-6 text-slate-500">Chagua mazungumzo upande wa kushoto au tafuta rafiki kwa username ili muanze chat. Ujumbe mpya utaonekana papo hapo realtime inapowezeshwa.</p><span className="mt-4 inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-emerald-800 shadow-sm dark:bg-slate-900 dark:text-emerald-300"><ShieldCheck className="h-4 w-4" /> Faragha na block rules zinatumika</span></div>}
       </div>
