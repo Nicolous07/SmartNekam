@@ -4,6 +4,7 @@ import { ArrowLeft, CheckCircle2, Crown, Gift, ShieldCheck, Sparkles } from 'luc
 import { createClient } from '@/lib/supabase/server'
 import PremiumPlanButton from '@/components/payments/PremiumPlanButton'
 import XPRewardClaimButton from '@/components/payments/XPRewardClaimButton'
+import { SMARTNEKAM_PAYMENTS_ENABLED } from '@/lib/payments/feature'
 
 type Plan = {
   id: string
@@ -46,6 +47,8 @@ export default async function PremiumPage({
 }: {
   searchParams: Promise<{ payment?: string; reward?: string }>
 }) {
+  if (!SMARTNEKAM_PAYMENTS_ENABLED) redirect('/learn')
+
   const params = await searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
