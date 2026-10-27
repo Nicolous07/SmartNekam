@@ -1155,8 +1155,8 @@ export default function DirectMessages() {
               const parentMessage = message.reply_to_message_id ? messages.find((candidate) => candidate.id === message.reply_to_message_id) : null
               const messageReactions = reactions.filter((item) => item.message_id === message.id)
               const reactionCounts = QUICK_REACTIONS.map((emoji) => ({ emoji, count: messageReactions.filter((item) => item.reaction === emoji).length, mine: messageReactions.some((item) => item.user_id === myUserId && item.reaction === emoji) })).filter((item) => item.count > 0)
-              return <div key={message.id} className={`sn-chat-message-row flex items-center gap-3 ${mine ? 'sn-chat-message-row-mine justify-start' : 'sn-chat-message-row-other justify-end'}`}>
-                {mine && <Avatar name={message.sender_name} url={message.sender_avatar} size="h-10 w-10 mr-0 mt-1" />}
+              return <div key={message.id} className={`sn-chat-message-row flex items-center gap-3 ${mine ? 'sn-chat-message-row-mine justify-end' : 'sn-chat-message-row-other justify-start'}`}>
+                {!mine && <Avatar name={message.sender_name} url={message.sender_avatar} size="h-10 w-10 mr-0 mt-1" />}
                 <div className={`sn-chat-message-bubble max-w-[90%] sm:max-w-[80%] ${mine ? 'sn-chat-message-bubble-mine' : 'sn-chat-message-bubble-other'}`}>
                   <p className={`sn-chat-message-heading mb-1.5 text-[10px] font-extrabold uppercase tracking-[0.13em] ${mine ? 'sn-chat-message-heading-mine' : 'sn-chat-message-heading-other'}`}>
                     {mine ? 'You' : message.sender_name}{activeConversation.conversation_type === 'group' && !mine ? ` · @${message.sender_username}` : ''}
@@ -1181,7 +1181,7 @@ export default function DirectMessages() {
                     {(mine || (activeConversation.conversation_type === 'group' && groupManagement?.can_manage)) && <button type="button" title={mine ? 'Futa ujumbe' : 'Admin: Delete for everyone'} onClick={() => void deleteMessage(message)} className="rounded-md p-1 hover:bg-black/10"><Trash2 className="h-3.5 w-3.5" /></button>}
                   </div>}
                 </div>
-                {!mine && <Avatar name={message.sender_name} url={message.sender_avatar} size="h-10 w-10 ml-0 mt-1" />}
+                {mine && <Avatar name={myProfile.full_name || message.sender_name} url={myProfile.avatar_url ?? message.sender_avatar} size="h-10 w-10 ml-0 mt-1" />}
               </div>
             })}
             <div ref={bottomRef} />
