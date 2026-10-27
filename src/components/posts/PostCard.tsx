@@ -348,18 +348,45 @@ export default function PostCard({
       />
       {post.attachments && post.attachments.length > 0 ? (
         <div className={`mt-3 grid gap-2 ${post.attachments.length > 1 ? 'sm:grid-cols-2' : 'grid-cols-1'}`}>
-          {post.attachments.map((attachment, attachmentIndex) => attachment.mime_type?.startsWith('image/') ? (
-            <a key={`${attachment.url}-${attachmentIndex}`} href={attachment.url} target="_blank" rel="noopener noreferrer" className="group relative block overflow-hidden rounded-2xl border border-emerald-100 bg-slate-50 dark:border-slate-800 dark:bg-slate-900">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={attachment.url} alt={attachment.name || 'Picha ya post'} loading="lazy" className="max-h-[28rem] w-full object-contain transition duration-300 group-hover:scale-[1.01]" />
-            </a>
-          ) : (
-            <a key={`${attachment.url}-${attachmentIndex}`} href={attachment.url} target="_blank" rel="noopener noreferrer" className="flex min-w-0 items-center gap-3 rounded-2xl border border-emerald-100 bg-emerald-50/60 p-3 transition hover:border-emerald-400 hover:bg-emerald-50 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-emerald-700 shadow-sm dark:bg-slate-800 dark:text-emerald-200">{attachment.mime_type === 'application/pdf' ? <FileText className="h-5 w-5"/> : <FileImage className="h-5 w-5"/>}</span>
-              <span className="min-w-0 flex-1"><span className="block truncate text-sm font-extrabold text-slate-900 dark:text-white">{attachment.name || 'Kiambatisho'}</span><span className="mt-1 block text-[11px] text-slate-500">{attachment.mime_type === 'application/pdf' ? 'PDF document' : 'Faili lililoambatishwa'}</span></span>
-              <Download className="h-4 w-4 shrink-0 text-emerald-700 dark:text-emerald-300"/>
-            </a>
-          ))}
+          {post.attachments.map((attachment, attachmentIndex) => {
+            const key = `${attachment.url}-${attachmentIndex}`
+            if (attachment.mime_type?.startsWith('image/')) {
+              return (
+                <a key={key} href={attachment.url} target="_blank" rel="noopener noreferrer" className="group relative block overflow-hidden rounded-2xl border border-emerald-100 bg-slate-50 dark:border-slate-800 dark:bg-slate-900">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={attachment.url} alt={attachment.name || 'Picha ya post'} loading="lazy" className="max-h-[28rem] w-full object-contain transition duration-300 group-hover:scale-[1.01]" />
+                </a>
+              )
+            }
+            if (attachment.mime_type?.startsWith('video/')) {
+              return (
+                <div key={key} className="min-w-0 overflow-hidden rounded-2xl border border-emerald-100 bg-slate-950 dark:border-slate-800">
+                  <video
+                    controls
+                    playsInline
+                    preload="metadata"
+                    aria-label={attachment.name || 'Video fupi ya post'}
+                    className="aspect-video max-h-[28rem] w-full bg-black object-contain"
+                  >
+                    <source src={attachment.url} type={attachment.mime_type} />
+                    Kivinjari chako hakiwezi kucheza video hii.
+                  </video>
+                  <div className="flex items-center justify-between gap-2 px-3 py-2 text-[11px] text-slate-300">
+                    <span className="min-w-0 truncate">{attachment.name || 'Video fupi'}</span>
+                    {typeof attachment.size_bytes === 'number' && <span className="shrink-0">{(attachment.size_bytes / (1024 * 1024)).toFixed(1)} MB</span>}
+                    <a href={attachment.url} download={attachment.name || 'smartnekam-video'} className="shrink-0 font-bold text-indigo-200 hover:text-white">Pakua</a>
+                  </div>
+                </div>
+              )
+            }
+            return (
+              <a key={key} href={attachment.url} target="_blank" rel="noopener noreferrer" className="flex min-w-0 items-center gap-3 rounded-2xl border border-emerald-100 bg-emerald-50/60 p-3 transition hover:border-emerald-400 hover:bg-emerald-50 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-emerald-700 shadow-sm dark:bg-slate-800 dark:text-emerald-200">{attachment.mime_type === 'application/pdf' ? <FileText className="h-5 w-5"/> : <FileImage className="h-5 w-5"/>}</span>
+                <span className="min-w-0 flex-1"><span className="block truncate text-sm font-extrabold text-slate-900 dark:text-white">{attachment.name || 'Kiambatisho'}</span><span className="mt-1 block text-[11px] text-slate-500">{attachment.mime_type === 'application/pdf' ? 'PDF document' : 'Faili lililoambatishwa'}</span></span>
+                <Download className="h-4 w-4 shrink-0 text-emerald-700 dark:text-emerald-300"/>
+              </a>
+            )
+          })}
         </div>
       ) : post.image_url ? (
         // eslint-disable-next-line @next/next/no-img-element
