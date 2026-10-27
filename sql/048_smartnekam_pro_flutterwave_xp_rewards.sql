@@ -41,11 +41,11 @@ ALTER TABLE public.subscription_plans
 
 INSERT INTO public.subscription_plans(name, slug, price, currency, billing_interval, is_active, display_order, description, features)
 VALUES
-  ('SmartNekam Pro — Daily', 'smartnekam-pro-daily', 500, 'TZS', 'daily', true, 1, 'Ufikiaji wa Pro kwa siku moja.', '{"access":"pro","features":["premium_courses"]}'::jsonb),
-  ('SmartNekam Pro — Weekly', 'smartnekam-pro-weekly', 1500, 'TZS', 'weekly', true, 2, 'Ufikiaji wa Pro kwa siku saba.', '{"access":"pro","features":["premium_courses"]}'::jsonb),
-  ('SmartNekam Pro — Monthly', 'smartnekam-pro-monthly', 3000, 'TZS', 'monthly', true, 3, 'Mpango wa Pro wa mwezi mmoja.', '{"access":"pro","features":["premium_courses"]}'::jsonb),
-  ('SmartNekam Pro — 3 Months', 'smartnekam-pro-quarterly', 8000, 'TZS', 'quarterly', true, 4, 'Ufikiaji wa Pro kwa miezi mitatu.', '{"access":"pro","features":["premium_courses"]}'::jsonb),
-  ('SmartNekam Pro — Yearly', 'smartnekam-pro-yearly', 25000, 'TZS', 'yearly', true, 5, 'Ufikiaji wa Pro kwa mwaka mmoja.', '{"access":"pro","features":["premium_courses"]}'::jsonb)
+  ('SmartNekam Pro — Daily', 'smartnekam-pro-daily', 500, 'TZS', 'daily', true, 1, 'Ufikiaji wa Pro kwa siku moja.', '{"access":"pro","features":["premium_courses","library_marking_schemes"]}'::jsonb),
+  ('SmartNekam Pro — Weekly', 'smartnekam-pro-weekly', 1500, 'TZS', 'weekly', true, 2, 'Ufikiaji wa Pro kwa siku saba.', '{"access":"pro","features":["premium_courses","library_marking_schemes"]}'::jsonb),
+  ('SmartNekam Pro — Monthly', 'smartnekam-pro-monthly', 3000, 'TZS', 'monthly', true, 3, 'Mpango wa Pro wa mwezi mmoja.', '{"access":"pro","features":["premium_courses","library_marking_schemes"]}'::jsonb),
+  ('SmartNekam Pro — 3 Months', 'smartnekam-pro-quarterly', 8000, 'TZS', 'quarterly', true, 4, 'Ufikiaji wa Pro kwa miezi mitatu.', '{"access":"pro","features":["premium_courses","library_marking_schemes"]}'::jsonb),
+  ('SmartNekam Pro — Yearly', 'smartnekam-pro-yearly', 25000, 'TZS', 'yearly', true, 5, 'Ufikiaji wa Pro kwa mwaka mmoja.', '{"access":"pro","features":["premium_courses","library_marking_schemes"]}'::jsonb)
 ON CONFLICT (slug) DO UPDATE SET
   name = EXCLUDED.name,
   price = EXCLUDED.price,
@@ -402,6 +402,32 @@ $function$;
 REVOKE ALL ON FUNCTION public.has_active_smartnekam_pro() FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.has_active_smartnekam_pro() FROM anon;
 GRANT EXECUTE ON FUNCTION public.has_active_smartnekam_pro() TO authenticated;
+
+-- Keep approved papers readable, but protect the marking-scheme file path so
+-- it is only signed/readable by an active Pro subscriber or its uploader.
+DROP POLICY IF EXISTS learning_resources_read_own_or_approved ON storage.objects;
+CREATE POLICY learning_resources_read_own_or_approved
+ON storage.objects FOR SELECT TO authenticated
+USING (
+  bucket_id = 'learning-resources'
+  AND (
+    (storage.foldername(name))[1] = (SELECT auth.uid())::text
+    OR EXISTS (
+      SELECT 1 FROM public.notes n
+      WHERE n.storage_path = name AND n.status = 'approved'
+    )
+    OR EXISTS (
+      SELECT 1 FROM public.past_papers p
+      WHERE p.storage_path = name AND p.status = 'approved'
+    )
+    OR EXISTS (
+      SELECT 1 FROM public.past_papers p
+      WHERE p.marking_scheme_path = name
+        AND p.status = 'approved'
+        AND public.has_active_smartnekam_pro()
+    )
+  )
+);
 
 -- Idempotent course access: free courses stay free; Pro subscriptions unlock
 -- all published Premium courses without requiring a separate course payment.
