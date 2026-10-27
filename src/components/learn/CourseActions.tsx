@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { CheckCircle2, Loader2, PlayCircle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { SMARTNEKAM_PAYMENTS_ENABLED } from '@/lib/payments/feature'
 
 export function CourseEnrollmentAction({ courseId, accessType, enrolled, hasProAccess = false }: { courseId:string; accessType:string; enrolled:boolean; hasProAccess?:boolean }) {
   const supabase = useMemo(() => createClient(), [])
@@ -11,11 +12,13 @@ export function CourseEnrollmentAction({ courseId, accessType, enrolled, hasProA
   const [busy,setBusy] = useState(false)
   const [message,setMessage] = useState('')
 
+  if (!SMARTNEKAM_PAYMENTS_ENABLED && accessType !== 'free' && !hasProAccess && !enrolled) return null
+
   async function enroll() {
     setBusy(true)
     setMessage('')
     if (accessType !== 'free' && !hasProAccess) {
-      router.push('/premium')
+      if (SMARTNEKAM_PAYMENTS_ENABLED) router.push('/premium')
       setBusy(false)
       return
     }
