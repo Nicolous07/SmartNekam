@@ -34,12 +34,20 @@ export async function POST(request: Request) {
     }, { status: 400 })
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/+$/, '')
-  if (!baseUrl || !process.env.FLW_SECRET_KEY) {
+  const missingSettings = [
+    !process.env.NEXT_PUBLIC_SITE_URL ? 'NEXT_PUBLIC_SITE_URL' : null,
+    !process.env.NEXT_PUBLIC_SUPABASE_URL ? 'NEXT_PUBLIC_SUPABASE_URL' : null,
+    !process.env.SUPABASE_SERVICE_ROLE_KEY ? 'SUPABASE_SERVICE_ROLE_KEY' : null,
+    !process.env.FLW_SECRET_KEY ? 'FLW_SECRET_KEY' : null,
+  ].filter((item): item is string => Boolean(item))
+
+  if (missingSettings.length) {
     return NextResponse.json({
-      error: 'Malipo bado hayajawezeshwa kwenye server. Admin anahitaji kuweka mazingira ya Flutterwave.',
+      error: 'Malipo bado hayajawezeshwa kwenye server. Environment variables hazipo: ' + missingSettings.join(', ') + '. Admin aweke majina haya kwenye Vercel bila kuonyesha secret values.',
     }, { status: 503 })
   }
+
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL!.replace(/\\/+$/, '')
 
   try {
     const admin = createPaymentsAdminClient()
@@ -101,7 +109,8 @@ export async function POST(request: Request) {
           title: 'SmartNekam Pro',
           description: plan.name,
         },
-        payment_options: 'card,mobilemoneytanzania',
+        // Let the verified merchant's Flutterwave dashboard choose from the methods
+        // enabled for the account, country, and TZS currency. Availability is provider-controlled.
         meta: {
           profile_id: user.id,
           plan_id: plan.id,
