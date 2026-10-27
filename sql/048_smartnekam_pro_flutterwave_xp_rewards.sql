@@ -394,7 +394,6 @@ AS $function$
       AND us.status = 'active'
       AND us.current_period_end IS NOT NULL
       AND us.current_period_end > pg_catalog.now()
-      AND sp.is_active = true
       AND sp.slug LIKE 'smartnekam-pro-%'
   );
 $function$;
