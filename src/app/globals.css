@@ -608,3 +608,294 @@ html.amoled {
 .sn-horizontal-rail::-webkit-scrollbar-thumb { background: rgba(16, 185, 129, .5); border-radius: 999px; }
 .sn-horizontal-rail::-webkit-scrollbar-track { background: transparent; }
 .sn-horizontal-rail:focus-visible { outline: 2px solid #10b981; outline-offset: 2px; }
+
+
+/* ==========================================================
+   SMARTNEKAM CHAT — glossy monochrome messenger skin
+   Inspired by the supplied silver / charcoal chat reference.
+   Scoped to DirectMessages so the wider app theme is untouched.
+   ========================================================== */
+.sn-chat-shell {
+  border-color: rgba(62, 69, 76, 0.40) !important;
+  background: linear-gradient(145deg, #d5d9dd, #989fa6 48%, #282e34) !important;
+  box-shadow:
+    0 28px 80px rgba(10, 14, 18, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.88),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.20) !important;
+}
+.sn-chat-shell-active {
+  background: #20252a !important;
+}
+.sn-chat-topbar {
+  background: linear-gradient(110deg, #101418 0%, #343a40 52%, #14181c 100%) !important;
+  border-color: rgba(230, 234, 238, 0.16) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 7px 22px rgba(0, 0, 0, 0.2);
+}
+.sn-chat-topbar p:first-child {
+  color: #d6dbe0 !important;
+}
+.sn-chat-topbar p:last-child {
+  color: #b5bcc3 !important;
+}
+.sn-chat-sidebar {
+  background: linear-gradient(180deg, #252a30 0%, #15191e 100%) !important;
+  border-color: rgba(240, 243, 246, 0.10) !important;
+}
+.sn-chat-sidebar label {
+  background: linear-gradient(180deg, #353b42, #252a30) !important;
+  border-color: rgba(230, 235, 240, 0.16) !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.32);
+}
+.sn-chat-sidebar label svg {
+  color: #c2c8ce !important;
+}
+.sn-chat-sidebar input,
+.sn-chat-sidebar input::placeholder {
+  color: #f1f3f5 !important;
+}
+.sn-chat-sidebar button:hover {
+  border-color: rgba(235, 239, 243, 0.24);
+}
+.sn-chat-sidebar > div:first-child {
+  border-color: rgba(255, 255, 255, 0.09) !important;
+}
+.sn-chat-sidebar .text-slate-400,
+.sn-chat-sidebar .text-slate-500 {
+  color: #aab1b8 !important;
+}
+.sn-chat-sidebar .text-white {
+  color: #f6f7f8 !important;
+}
+.sn-chat-sidebar .bg-emerald-600,
+.sn-chat-sidebar .bg-emerald-700 {
+  background: linear-gradient(145deg, #5a6168, #343a40) !important;
+  color: white !important;
+}
+.sn-chat-sidebar .text-emerald-700,
+.sn-chat-sidebar .text-emerald-800,
+.sn-chat-sidebar .text-emerald-600 {
+  color: #c6ccd2 !important;
+}
+.sn-chat-sidebar .bg-emerald-50,
+.sn-chat-sidebar .bg-emerald-100 {
+  background: rgba(255, 255, 255, 0.09) !important;
+}
+.sn-chat-sidebar .border-emerald-100,
+.sn-chat-sidebar .border-emerald-200,
+.sn-chat-sidebar .border-slate-100 {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+.sn-chat-stage {
+  background:
+    radial-gradient(ellipse at 50% 48%, rgba(246, 248, 250, 0.98) 0%, rgba(210, 215, 220, 0.98) 27%, rgba(149, 158, 167, 0.92) 49%, rgba(66, 74, 82, 0.98) 73%, #171b20 100%) !important;
+  position: relative;
+  isolation: isolate;
+}
+.sn-chat-stage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 50% 45%, transparent 0%, rgba(255,255,255,0.12) 37%, rgba(5,8,12,0.18) 100%),
+    linear-gradient(115deg, rgba(255,255,255,0.10), transparent 33%, rgba(0,0,0,0.10));
+}
+html.dark .sn-chat-stage {
+  background:
+    radial-gradient(ellipse at 50% 48%, #727a82 0%, #4a525a 28%, #2b3138 51%, #15191e 77%, #080a0d 100%) !important;
+}
+html.amoled .sn-chat-stage {
+  background:
+    radial-gradient(ellipse at 50% 48%, #4b4e52 0%, #292c30 28%, #121416 59%, #000 100%) !important;
+}
+.sn-chat-conversation-header {
+  background: linear-gradient(105deg, rgba(18, 21, 25, 0.96), rgba(43, 48, 54, 0.93), rgba(18, 21, 25, 0.96)) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.23), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.sn-chat-conversation-header .text-slate-400 {
+  color: #b5bcc3 !important;
+}
+.sn-chat-avatar {
+  background: linear-gradient(145deg, #68717a, #24292e) !important;
+  border: 2px solid rgba(247, 249, 251, 0.88) !important;
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.36),
+    inset 0 1px 1px rgba(255, 255, 255, 0.5) !important;
+  outline: 1px solid rgba(35, 40, 45, 0.32);
+}
+.sn-chat-thread {
+  background: transparent !important;
+  scroll-behavior: smooth;
+}
+.sn-chat-message-row {
+  width: 100%;
+  animation: sn-chat-message-enter 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.sn-chat-message-row-mine {
+  padding-right: clamp(0px, 5vw, 44px);
+}
+.sn-chat-message-row-other {
+  padding-left: clamp(0px, 5vw, 44px);
+}
+.sn-chat-message-bubble {
+  position: relative;
+  min-width: 92px;
+  padding: 12px 16px 10px;
+  border-radius: 27px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.sn-chat-message-bubble-mine {
+  color: #171a1e !important;
+  background: linear-gradient(155deg, #ffffff 0%, #f4f5f6 60%, #e7e9eb 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.98) !important;
+  border-bottom-color: #c4c9ce !important;
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.98),
+    inset 0 -2px 2px rgba(92, 99, 106, 0.12),
+    0 12px 24px rgba(7, 11, 15, 0.24),
+    0 2px 3px rgba(255, 255, 255, 0.45) !important;
+  border-bottom-left-radius: 10px;
+}
+.sn-chat-message-bubble-other {
+  color: #f7f8f9 !important;
+  background: linear-gradient(155deg, #3b4046 0%, #202429 52%, #0f1215 100%) !important;
+  border: 1px solid rgba(164, 172, 180, 0.52) !important;
+  border-top-color: rgba(255, 255, 255, 0.25) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.38),
+    0 13px 28px rgba(6, 9, 12, 0.36) !important;
+  border-bottom-right-radius: 10px;
+}
+.sn-chat-message-bubble-mine .text-emerald-700,
+.sn-chat-message-bubble-mine .text-emerald-800,
+.sn-chat-message-bubble-mine .text-emerald-600 {
+  color: #4a5056 !important;
+}
+.sn-chat-message-bubble-other .text-emerald-700,
+.sn-chat-message-bubble-other .text-emerald-800,
+.sn-chat-message-bubble-other .text-emerald-600 {
+  color: #e2e5e8 !important;
+}
+.sn-chat-message-bubble-mine [class*="border-emerald-100"],
+.sn-chat-message-bubble-mine [class*="border-emerald-500"] {
+  border-color: #c3c7cc !important;
+}
+.sn-chat-message-bubble-mine [class*="bg-emerald-700/50"],
+.sn-chat-message-bubble-mine [class*="bg-emerald-50"] {
+  color: #30353a !important;
+  background: #e6e8ea !important;
+}
+.sn-chat-message-bubble-other [class*="bg-emerald-50"] {
+  background: rgba(255,255,255,0.10) !important;
+  color: #f0f2f4 !important;
+}
+.sn-chat-message-meta {
+  color: #70767c !important;
+}
+.sn-chat-message-bubble-other .sn-chat-message-meta {
+  color: #b7bec5 !important;
+}
+.sn-chat-message-actions {
+  color: #686f76 !important;
+}
+.sn-chat-message-bubble-other .sn-chat-message-actions {
+  color: #c4c9ce !important;
+}
+.sn-chat-message-actions button:hover {
+  background: rgba(120, 128, 136, 0.16) !important;
+}
+.sn-chat-message-bubble-other .sn-chat-message-actions button:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+.sn-chat-composer {
+  position: relative;
+  z-index: 2;
+  gap: 8px !important;
+  margin: 10px 14px 15px !important;
+  padding: 8px 10px !important;
+  border: 7px solid #b8bec4 !important;
+  border-top: 7px solid #f3f4f5 !important;
+  border-radius: 999px !important;
+  background: linear-gradient(180deg, #f9fafb 0%, #e2e5e7 100%) !important;
+  box-shadow:
+    inset 0 2px 1px rgba(255, 255, 255, 0.98),
+    inset 0 -2px 3px rgba(80, 87, 95, 0.15),
+    0 12px 28px rgba(3, 6, 9, 0.33) !important;
+}
+.sn-chat-composer-input {
+  color: #22262a !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  box-shadow: none !important;
+  min-height: 42px !important;
+  padding: 10px 8px !important;
+  resize: none !important;
+}
+.sn-chat-composer-input::placeholder {
+  color: #94999e !important;
+}
+.sn-chat-composer-input:focus {
+  outline: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+.sn-chat-composer label {
+  width: 40px;
+  height: 40px;
+  border: 1px solid #c5cacf !important;
+  background: linear-gradient(145deg, #fff, #e3e6e8) !important;
+  color: #41474d !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.10), inset 0 1px 0 #fff !important;
+}
+.sn-chat-composer button[type="button"] {
+  border-color: #c4c9ce !important;
+  background: linear-gradient(145deg, #fdfdfd, #d9dde0) !important;
+  color: #41474d !important;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.12), inset 0 1px 0 #fff !important;
+}
+.sn-chat-composer button[type="button"]:disabled,
+.sn-chat-composer label:has(input:disabled) {
+  opacity: 0.45 !important;
+}
+.sn-chat-send {
+  border: 1px solid #c3c8cc !important;
+  background: linear-gradient(145deg, #fff, #e2e5e7) !important;
+  color: #737a80 !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.13), inset 0 1px 0 #fff !important;
+}
+.sn-chat-send:not(:disabled) {
+  background: linear-gradient(145deg, #ffffff, #d2d7db) !important;
+  color: #30363c !important;
+}
+@keyframes sn-chat-message-enter {
+  from { opacity: 0; transform: translateY(7px) scale(0.99); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@media (max-width: 640px) {
+  .sn-chat-message-row-mine { padding-right: 0; }
+  .sn-chat-message-row-other { padding-left: 0; }
+  .sn-chat-message-bubble { max-width: calc(100% - 52px); padding: 11px 13px 9px; }
+  .sn-chat-composer {
+    gap: 5px !important;
+    margin: 8px 8px max(10px, env(safe-area-inset-bottom)) !important;
+    padding: 6px !important;
+    border-width: 5px !important;
+    border-top-width: 5px !important;
+  }
+  .sn-chat-composer label,
+  .sn-chat-composer button[type="button"],
+  .sn-chat-send {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+  }
+  .sn-chat-composer-input { padding-inline: 5px !important; font-size: 13px !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sn-chat-message-row { animation: none !important; }
+}
