@@ -377,6 +377,83 @@ $function$;
 REVOKE ALL ON FUNCTION public.claim_xp_reward(text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.claim_xp_reward(text) TO authenticated;
 
+
+-- Central Pro entitlement check, used to open paid-for Premium courses.
+CREATE OR REPLACE FUNCTION public.has_active_smartnekam_pro()
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $function$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.user_subscriptions us
+    JOIN public.subscription_plans sp ON sp.id = us.plan_id
+    WHERE us.profile_id = (SELECT auth.uid())
+      AND us.status = 'active'
+      AND us.current_period_end IS NOT NULL
+      AND us.current_period_end > pg_catalog.now()
+      AND sp.is_active = true
+      AND sp.slug LIKE 'smartnekam-pro-%'
+  );
+$function$;
+
+REVOKE ALL ON FUNCTION public.has_active_smartnekam_pro() FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.has_active_smartnekam_pro() FROM anon;
+GRANT EXECUTE ON FUNCTION public.has_active_smartnekam_pro() TO authenticated;
+
+-- Idempotent course access: free courses stay free; Pro subscriptions unlock
+-- all published Premium courses without requiring a separate course payment.
+CREATE OR REPLACE FUNCTION public.enroll_in_course_with_pro(p_course_id uuid)
+RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $function$
+DECLARE
+  v_user_id uuid := (SELECT auth.uid());
+  v_access_type text;
+  v_enrollment_id uuid;
+BEGIN
+  IF v_user_id IS NULL THEN
+    RAISE EXCEPTION 'Ingia kwenye SmartNekam kwanza.' USING ERRCODE = '28000';
+  END IF;
+
+  SELECT c.access_type::text
+    INTO v_access_type
+  FROM public.courses c
+  WHERE c.id = p_course_id AND c.status = 'published';
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Kozi haijapatikana au haijachapishwa.' USING ERRCODE = 'P0002';
+  END IF;
+
+  IF v_access_type <> 'free' AND NOT public.has_active_smartnekam_pro() THEN
+    RAISE EXCEPTION 'Kozi hii inahitaji SmartNekam Pro active.' USING ERRCODE = '42501';
+  END IF;
+
+  INSERT INTO public.course_enrollments(course_id, student_id, status)
+  VALUES (p_course_id, v_user_id, 'active')
+  ON CONFLICT (course_id, student_id) DO UPDATE
+    SET status = 'active', cancelled_at = NULL
+    WHERE public.course_enrollments.status = 'cancelled'
+  RETURNING id INTO v_enrollment_id;
+
+  IF v_enrollment_id IS NULL THEN
+    SELECT e.id INTO v_enrollment_id
+    FROM public.course_enrollments e
+    WHERE e.course_id = p_course_id AND e.student_id = v_user_id;
+  END IF;
+
+  RETURN v_enrollment_id;
+END;
+$function$;
+
+REVOKE ALL ON FUNCTION public.enroll_in_course_with_pro(uuid) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.enroll_in_course_with_pro(uuid) FROM anon;
+GRANT EXECUTE ON FUNCTION public.enroll_in_course_with_pro(uuid) TO authenticated;
+
 COMMIT;
 
 -- Verification queries after running:
