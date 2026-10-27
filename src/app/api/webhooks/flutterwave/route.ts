@@ -58,7 +58,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ received: true, ignored: true })
     }
 
-    if (transaction.status === 'successful') {
+    if (transaction.status === 'succeeded') {
       return NextResponse.json({ received: true, already_processed: true })
     }
 
