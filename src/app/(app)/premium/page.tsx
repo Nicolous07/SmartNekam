@@ -27,6 +27,7 @@ const INTERVAL_LABELS: Record<string, string> = {
   weekly: 'wiki 1',
   monthly: 'mwezi 1',
   quarterly: 'miezi 3',
+  annual: 'mwaka 1',
   yearly: 'mwaka 1',
 }
 
