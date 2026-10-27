@@ -1,7 +1,12 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { SMARTNEKAM_PAYMENTS_ENABLED } from '@/lib/payments/feature'
 
 export async function POST(request: Request) {
+  if (!SMARTNEKAM_PAYMENTS_ENABLED) {
+    return NextResponse.json({ error: 'Zawadi za Pro zimezimwa kwa muda.' }, { status: 503 })
+  }
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
