@@ -45,16 +45,27 @@ Weka values kwenye Production, na Preview kama unafanya majaribio. Usibandike ha
 
 ## Hatua C — Flutterwave dashboard
 
-1. Hakikisha akaunti yako ya biashara imewezeshwa kupokea malipo ya TZS na payment methods unazotaka. Flutterwave inaelekeza kutumia Standard checkout API kwa hosted payment page; payment methods halisi hutegemea nchi, currency na mipangilio ya merchant.
-2. Tumia test credentials na mazingira ya test kwanza; usianze na malipo halisi kabla ya kujaribu flow yote.
-3. Kwenye mipangilio ya Webhooks, weka URL hii:
+1. Hakikisha akaunti ya merchant imeidhinishwa kwa live payments na TZS.
+2. Checkout haitafungi njia za malipo ndani ya code; itatumia njia ambazo zimewezeshwa kwenye merchant account na zinazopatikana kwa nchi/currency husika.
+3. Kwa TZS/Tanzania, Flutterwave inaorodhesha **card** na **mobilemoneytanzania**. Mitandao inayotajwa kwa Tanzania ni pamoja na Airtel, Tigo na HaloPesa; baadhi ya maelezo rasmi ya endpoint pia yana Vodacom/Vodafone. Upatikanaji wa kila method hutegemea approval na mipangilio ya provider. Kadi za kimataifa zinaweza kufanya kazi kupitia card rail, lakini si kila mobile-money network duniani inaweza kulipa kwa TZS.
+4. Kwenye mipangilio ya Webhooks, weka URL hii:
 
-\`https://smartnekam.vercel.app/api/webhooks/flutterwave\`
+`https://smartnekam.vercel.app/api/webhooks/flutterwave`
 
-4. Weka webhook secret hash inayolingana na \`FLW_SECRET_HASH\` kwenye Vercel. Kwa integration hii ya v3, endpoint hukagua header \`verif-hash\`.
-5. Deploy upya SmartNekam baada ya kuongeza environment variables.
+5. Weka webhook secret hash inayolingana na `FLW_SECRET_HASH` kwenye Vercel. Endpoint hukagua header `verif-hash`.
+6. Deploy upya SmartNekam baada ya kuongeza environment variables.
 
-Marejeo rasmi: [Flutterwave Standard checkout](https://developer.flutterwave.com/docs/flutterwave-standard-1), [API ya kuunda checkout](https://developer.flutterwave.com/reference/checkout), [Webhooks](https://developer.flutterwave.com/docs/webhooks), [Tanzania mobile money](https://developer.flutterwave.com/docs/tanzania).
+Marejeo rasmi: [Flutterwave Standard checkout](https://developer.flutterwave.com/docs/flutterwave-standard-1), [Payment methods by country/currency](https://developer.flutterwave.com/docs/payment-methods), [Webhooks](https://developer.flutterwave.com/docs/webhooks), [Tanzania mobile money](https://developer.flutterwave.com/docs/tanzania).
+
+## Hatua D — Settlement account (akaunti ya kupokea mapato)
+
+1. Ingia kwenye Flutterwave Dashboard kupitia akaunti yako, kisha fungua **Settings** na sehemu ya **Settlement Account / Settlements** (majina ya menu yanaweza kutofautiana).
+2. Chagua benki au wallet inayokubaliwa na Flutterwave kwa nchi na akaunti yako; jaza taarifa za mwenye akaunti kwenye ukurasa salama wa provider na ukamilishe KYC/uthibitisho.
+3. **Usiweke namba ya akaunti au namba ya kadi kwenye source code, GitHub, SQL, au Vercel Environment Variables.** Taarifa za settlement ziwekwe kwenye dashboard salama ya payment provider, si kwenye code ya SmartNekam. Usishiriki CVV, PIN au OTP.
+4. Kadi ya malipo si lazima iwe akaunti ya kupokea settlement. Tumia benki/wallet ambayo Flutterwave inakubali kama destination. Ikiwa huna uhakika kama taarifa zako zinakubaliwa kama settlement, thibitisha na benki/provider kabla ya kuziingiza.
+5. Live settlement hupatikana baada ya merchant account kuidhinishwa/KYC; test-mode transactions si mapato halisi.
+
+Marejeo rasmi: [Flutterwave Settlements](https://developer.flutterwave.com/docs/settlements), [Flutterwave Quickstart & KYC](https://developer.flutterwave.com/docs/quickstart).
 
 ## Hatua D — Majaribio
 
@@ -87,6 +98,6 @@ LIMIT 20;
 ## Mipaka inayopaswa kujulikana
 
 - Code na SQL zimehifadhiwa GitHub, lakini hazithibitishi kwamba SQL tayari imeendeshwa Supabase au kwamba deployment ya Vercel imefanikiwa.
-- Pro checkout hii inafunika subscriptions za SmartNekam Pro. Digital pack checkout, tutor escrow/payouts, creator course revenue share, school B2B invoicing, sponsor billing na event tickets ni modules tofauti na bado hazijaunganishwa na payment provider katika upgrade hii.
+- Upgrade hii inafungua kozi za Premium na marking schemes kwa akaunti yenye Pro active. AI unlimited, offline-download entitlement, priority mentor, mock-exam limits, premium packs, tutor escrow/payouts, creator revenue share, school B2B, sponsor billing na event tickets bado zinahitaji gating/integration zao kabla hazijaahidiwa kama zimekamilika.
 - Zawadi za XP zinazotolewa moja kwa moja kwa sasa ni muda wa Pro. Streak freeze, discount ya packs, badge entitlement na priority mentor zinahitaji entitlement na UI zinazozitumia kabla hazijaahidiwa kama zawadi inayofanya kazi.
 - Usionyeshe payment secrets au service role key kwenye frontend, GitHub, screenshots au chat.
