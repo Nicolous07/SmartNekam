@@ -35,7 +35,7 @@ export async function GET(request: Request) {
       return resultRedirect(url.origin, 'not_verified')
     }
 
-    if (transaction.status === 'successful') {
+    if (transaction.status === 'succeeded') {
       return resultRedirect(url.origin, 'success')
     }
 
