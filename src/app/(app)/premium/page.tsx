@@ -138,7 +138,7 @@ export default async function PremiumPage({
                 </p>
                 <p className="mt-1 text-xs text-slate-500">Kwa {INTERVAL_LABELS[plan.billing_interval] || plan.billing_interval}</p>
                 <ul className="mt-4 flex-1 space-y-2 text-sm text-slate-600 dark:text-slate-300">
-                  <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" /> Maudhui yanayoainishwa kuwa premium</li>
+                  <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" /> Kozi za Premium na marking schemes</li>
                   <li className="flex gap-2"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" /> Uthibitisho wa malipo upande wa server</li>
                 </ul>
                 <PremiumPlanButton planSlug={plan.slug} />
