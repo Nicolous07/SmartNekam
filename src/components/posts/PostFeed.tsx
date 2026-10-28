@@ -49,12 +49,17 @@ function InstitutionAndGroupsDiscovery({ schools, universities, groups }: { scho
 export default async function PostFeed() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+  const { data: appPreferences } = user
+    ? await supabase.from('user_app_preferences').select('low_data_mode').eq('user_id', user.id).maybeSingle()
+    : { data: null }
+  const lowDataMode = Boolean(appPreferences?.low_data_mode)
+
   const [feedResult, peopleResult, schoolsResult, universitiesResult, groupsResult, promotionsResult] = await Promise.all([
-    supabase.from('posts_feed').select('id, author_id, category, subject, content, image_url, created_at, author_name, author_username, author_avatar, author_role, like_count, comment_count, share_count, liked_by_me, is_anonymous, attachments, author_follower_count, following_author_by_me').order('created_at', { ascending: false }).limit(20),
-    user ? supabase.rpc('get_suggested_smartnekam_users', { p_limit: 6 }) : Promise.resolve({ data: [], error: null }),
-    supabase.from('schools').select('id,name,region,country').order('name').limit(3),
-    supabase.from('universities').select('id,name,region,country').order('name').limit(2),
-    supabase.from('study_groups').select('id,name,description,level,member_count,subject_id').eq('status','active').eq('privacy','public').is('school_id',null).is('university_id',null).order('member_count',{ascending:false}).limit(3),
+    supabase.from('posts_feed').select('id, author_id, category, subject, content, image_url, created_at, author_name, author_username, author_avatar, author_role, like_count, comment_count, share_count, liked_by_me, is_anonymous, attachments, author_follower_count, following_author_by_me').order('created_at', { ascending: false }).limit(lowDataMode ? 8 : 20),
+    user ? supabase.rpc('get_suggested_smartnekam_users', { p_limit: lowDataMode ? 3 : 6 }) : Promise.resolve({ data: [], error: null }),
+    supabase.from('schools').select('id,name,region,country').order('name').limit(lowDataMode ? 1 : 3),
+    supabase.from('universities').select('id,name,region,country').order('name').limit(lowDataMode ? 1 : 2),
+    supabase.from('study_groups').select('id,name,description,level,member_count,subject_id').eq('status','active').eq('privacy','public').is('school_id',null).is('university_id',null).order('member_count',{ascending:false}).limit(lowDataMode ? 2 : 3),
     supabase.rpc('get_active_smartnekam_promotions'),
   ])
   const basePosts = (feedResult.data ?? []) as FeedPost[]
