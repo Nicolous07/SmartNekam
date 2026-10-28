@@ -25,7 +25,7 @@ export default async function CommunitiesPage({ searchParams }: { searchParams: 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth')
-  const [profileRes, subjectsRes, groupsRes, membershipRes, questionsRes, ownQuestionsRes, mentorsRes, eventsRes, livesRes] = await Promise.all([
+  const [profileRes, subjectsRes, groupsRes, membershipRes, questionsRes, ownQuestionsRes, mentorsRes, eventsRes, livesRes, appPreferencesRes] = await Promise.all([
     supabase.from('profiles').select('full_name,level').eq('id', user.id).maybeSingle(),
     supabase.from('subjects').select('id,name,level').order('name'),
     supabase.from('study_groups').select('id,name,description,level,privacy,member_count,subject_id,created_at').eq('status', 'active').eq('privacy', 'public').is('school_id', null).is('university_id', null).order('created_at', { ascending: false }).limit(40),
@@ -35,6 +35,7 @@ export default async function CommunitiesPage({ searchParams }: { searchParams: 
     supabase.from('mentors').select('id,user_id,display_name,headline,bio,subjects,hourly_rate,verified,status,rating_average,created_at').eq('verified', true).eq('status','active').order('rating_average', { ascending: false }).limit(30),
     supabase.from('community_events').select('id,title,description,event_type,starts_at,ends_at,venue,registration_url,status').eq('status', 'active').order('starts_at', { ascending: true }).limit(20),
     supabase.from('live_sessions').select('id,title,description,scheduled_start,scheduled_end,status,host_id').in('status', ['scheduled','live']).order('scheduled_start', { ascending: true }).limit(12),
+    supabase.from('user_app_preferences').select('low_data_mode').eq('user_id', user.id).maybeSingle(),
   ])
   const currentProfile = profileRes.data ?? { full_name: 'Mwanafunzi', level: null }
   const subjects = (subjectsRes.data ?? []) as { id: string; name: string; level: string }[]
@@ -51,7 +52,7 @@ export default async function CommunitiesPage({ searchParams }: { searchParams: 
   const lives = (livesRes.data ?? []) as { id: string; title: string; description: string | null; scheduled_start: string; scheduled_end: string; status: string }[]
 
   return <div className="mx-auto max-w-6xl space-y-5">
-    <section className="geometric-hero isolate relative overflow-hidden rounded-3xl p-5 text-white sm:p-7"><Image src="/images/reference-home-feed.webp" alt="Wanafunzi wakijifunza pamoja kwenye darasa la kidijitali" fill priority sizes="(max-width: 768px) 100vw, 1200px" className="absolute inset-0 z-0 object-cover object-center opacity-85"/><div className="absolute inset-0 z-[1] bg-gradient-to-r from-[#0B0F1A]/95 via-[#0B0F1A]/75 to-[#0B0F1A]/25"/><div className="relative z-10"><p className="text-xs font-extrabold uppercase tracking-[0.18em] text-violet-200">Smart Community</p><h1 className="mt-2 text-3xl font-extrabold sm:text-4xl">Jamii ya wanafunzi</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-100">Uliza maswali, pata majibu, jiunge na study groups na ungana na mentors wa masomo na career.</p></div><Users className="absolute -bottom-5 -right-4 z-[2] h-36 w-36 text-white/10" /></section>
+    <section className="geometric-hero isolate relative overflow-hidden rounded-3xl p-5 text-white sm:p-7">{!lowDataMode && <Image src="/images/reference-home-feed.webp" alt="Wanafunzi wakijifunza pamoja kwenye darasa la kidijitali" fill sizes="(max-width: 768px) 100vw, 1200px" className="absolute inset-0 z-0 object-cover object-center opacity-85"/>}<div className="absolute inset-0 z-[1] bg-gradient-to-r from-[#0B0F1A]/95 via-[#0B0F1A]/75 to-[#0B0F1A]/25"/><div className="relative z-10"><p className="text-xs font-extrabold uppercase tracking-[0.18em] text-violet-200">Smart Community</p><h1 className="mt-2 text-3xl font-extrabold sm:text-4xl">Jamii ya wanafunzi</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-100">Uliza maswali, pata majibu, jiunge na study groups na ungana na mentors wa masomo na career.</p></div><Users className="absolute -bottom-5 -right-4 z-[2] h-36 w-36 text-white/10" /></section>
     <CommunityActions subjects={subjects} initialCreate={sp.create ?? ''} />
     <nav className="flex gap-2 overflow-x-auto pb-1">{TABS.map(({ key, label, icon: Icon }) => <Link key={key} href={`/communities?tab=${key}`} className={`inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2.5 text-sm font-extrabold transition ${active === key ? 'bg-emerald-600 text-white' : 'geometric-card text-slate-600 hover:text-emerald-700 dark:text-slate-200'}`}><Icon className="h-4 w-4" />{label}</Link>)}</nav>
 
