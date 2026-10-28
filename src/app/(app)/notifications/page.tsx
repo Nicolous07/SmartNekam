@@ -101,7 +101,7 @@ export default async function NotificationsPage() {
       </div>
     </section>
 
-    <PushNotificationSetup />
+    <PushNotificationSetup variant="compact" />
 
     {error && <p className="rounded-xl bg-amber-50 p-4 text-sm text-amber-900 dark:bg-amber-950/50 dark:text-amber-100">Taarifa hazijapakiwa: {error.message}</p>}
 
