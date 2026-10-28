@@ -37,6 +37,7 @@ export default async function CommunitiesPage({ searchParams }: { searchParams: 
     supabase.from('live_sessions').select('id,title,description,scheduled_start,scheduled_end,status,host_id').in('status', ['scheduled','live']).order('scheduled_start', { ascending: true }).limit(12),
     supabase.from('user_app_preferences').select('low_data_mode').eq('user_id', user.id).maybeSingle(),
   ])
+  const lowDataMode = appPreferencesRes.data ? Boolean(appPreferencesRes.data.low_data_mode) : true
   const currentProfile = profileRes.data ?? { full_name: 'Mwanafunzi', level: null }
   const subjects = (subjectsRes.data ?? []) as { id: string; name: string; level: string }[]
   const subjectMap = new Map(subjects.map((s) => [s.id, s.name]))
