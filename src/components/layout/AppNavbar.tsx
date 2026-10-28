@@ -3,17 +3,18 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import {
   Home, Library, MessageSquare, Terminal, Briefcase,
   ShieldCheck, Search, Plus, MoreHorizontal, X, FileUp, FileText,
   Users, CircleHelp, BookMarked, CalendarDays, Trophy, Bell, UserRound,
-  Flame, BrainCircuit, Wallet, CheckCheck, ChevronLeft,
+  Flame, BrainCircuit, Wallet,
 } from 'lucide-react'
 import ThemeToggle from './ThemeToggle'
 import SearchDialog from './SearchDialog'
 import { createClient } from '@/lib/supabase/client'
 import { SMARTNEKAM_PAYMENTS_ENABLED } from '@/lib/payments/feature'
+import PushNotificationSetup from '@/components/notifications/PushNotificationSetup'
 
 export type NavProfile = {
   id: string
@@ -61,13 +62,62 @@ const QUICK_CREATE = [
   { label: 'Tafuta fursa', desc: 'Scholarships na internships', icon: Trophy, href: '/opportunities' },
 ]
 
+function notificationTarget(row: NotificationPreview) {
+  const data = row.data ?? {}
+  const conversationId = typeof data.conversation_id === 'string' ? data.conversation_id : ''
+  const postId = typeof data.post_id === 'string' ? data.post_id : ''
+  const questionId = typeof data.question_id === 'string' ? data.question_id : ''
+  const groupId = typeof data.group_id === 'string' ? data.group_id : ''
+  const source = typeof data.source === 'string' ? data.source : ''
+  const status = typeof data.status === 'string' ? data.status : ''
+
+  if (conversationId) {
+    const params = new URLSearchParams({ tab: 'chats', conversation: conversationId })
+    return `/communities?${params.toString()}`
+  }
+  if (postId) return `/posts/${encodeURIComponent(postId)}`
+  if (questionId) return `/communities/questions/${encodeURIComponent(questionId)}`
+  if (groupId) return '/communities?tab=groups'
+  if (source === 'mentor_request') return '/communities?tab=mentors'
+  if (source === 'mentor_request_response') {
+    return status === 'accepted' ? '/communities?tab=chats' : '/communities?tab=mentors'
+  }
+
+  const value = data.href
+  if (typeof value === 'string' && value.startsWith('/') && !value.startsWith('//')
+    && value !== '/notifications' && !value.startsWith('/notifications?') && !value.startsWith('/notifications/')) {
+    return value
+  }
+
+  switch (row.notification_type) {
+    case 'chat':
+      return '/communities?tab=chats'
+    case 'mentor':
+      return '/communities?tab=mentors'
+    case 'community':
+      return '/communities'
+    case 'content_review':
+      return '/library'
+    case 'deadline':
+      return '/opportunities'
+    case 'application':
+      return '/applications'
+    case 'achievement':
+    case 'referral':
+    case 'security':
+      return '/profile'
+    default:
+      return '/notifications'
+  }
+}
+
 export default function AppNavbar({ profile, isAdmin = false }: { profile: NavProfile; isAdmin?: boolean }) {
   const pathname = usePathname()
+  const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
   const [unreadNotifications, setUnreadNotifications] = useState(0)
   const [notificationOpen, setNotificationOpen] = useState(false)
   const [notificationRows, setNotificationRows] = useState<NotificationPreview[]>([])
-  const [selectedNotification, setSelectedNotification] = useState<NotificationPreview | null>(null)
   const [notificationsLoading, setNotificationsLoading] = useState(false)
   const [navHidden, setNavHidden] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
@@ -75,7 +125,7 @@ export default function AppNavbar({ profile, isAdmin = false }: { profile: NavPr
   const [createOpen, setCreateOpen] = useState(false)
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`)
 
-  useEffect(() => { setNavHidden(false); setMoreOpen(false); setNotificationOpen(false); setSelectedNotification(null) }, [pathname])
+  useEffect(() => { setNavHidden(false); setMoreOpen(false); setNotificationOpen(false) }, [pathname])
   const loadNotifications = useCallback(async (showLoading = false) => {
     if (showLoading) setNotificationsLoading(true)
     try {
@@ -103,24 +153,21 @@ export default function AppNavbar({ profile, isAdmin = false }: { profile: NavPr
 
   function openNotifications() {
     setMoreOpen(false)
-    setSelectedNotification(null)
     setNotificationOpen(true)
     void loadNotifications(true)
   }
 
   async function openNotification(row: NotificationPreview) {
-    setSelectedNotification(row)
-    if (row.is_read) return
-
+    setNotificationOpen(false)
     setNotificationRows((current) => current.map((item) => item.id === row.id ? { ...item, is_read: true } : item))
-    setUnreadNotifications((count) => Math.max(0, count - 1))
-    const { error } = await supabase.from('notifications')
-      .update({ is_read: true, read_at: new Date().toISOString() })
-      .eq('id', row.id)
-      .eq('user_id', profile.id)
-    if (error) {
-      // Keep the popup responsive; the next realtime refresh will reconcile read state.
+    if (!row.is_read) {
+      setUnreadNotifications((count) => Math.max(0, count - 1))
+      void supabase.from('notifications')
+        .update({ is_read: true, read_at: new Date().toISOString() })
+        .eq('id', row.id)
+        .eq('user_id', profile.id)
     }
+    router.push(notificationTarget(row))
   }
 
   useEffect(() => {
@@ -160,7 +207,7 @@ export default function AppNavbar({ profile, isAdmin = false }: { profile: NavPr
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setSearchOpen(true) }
-      if (e.key === 'Escape') { setCreateOpen(false); setMoreOpen(false); setSearchOpen(false); setNotificationOpen(false); setSelectedNotification(null) }
+      if (e.key === 'Escape') { setCreateOpen(false); setMoreOpen(false); setSearchOpen(false); setNotificationOpen(false) }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -240,77 +287,56 @@ export default function AppNavbar({ profile, isAdmin = false }: { profile: NavPr
       {notificationOpen && (
         <div
           className="fixed inset-0 z-[90] flex items-end justify-center bg-slate-950/45 p-3 pb-24 backdrop-blur-sm sm:items-start sm:justify-end sm:pb-3 sm:pt-[4.5rem]"
-          onClick={() => { setNotificationOpen(false); setSelectedNotification(null) }}
+          onClick={() => setNotificationOpen(false)}
         >
           <section
             role="dialog"
             aria-modal="true"
             aria-labelledby="navbar-notifications-title"
             onClick={(event) => event.stopPropagation()}
-            className="anim-sheet-up geometric-card flex max-h-[72vh] w-full max-w-md flex-col overflow-hidden rounded-3xl border border-emerald-100 p-0 shadow-2xl dark:border-slate-700 sm:max-h-[min(78vh,620px)]"
+            className="anim-sheet-up geometric-card flex max-h-[78vh] w-full max-w-md flex-col overflow-hidden rounded-3xl border border-emerald-100 p-0 shadow-2xl dark:border-slate-700 sm:max-h-[min(82vh,680px)]"
           >
             <header className="flex items-center gap-3 border-b border-slate-100 p-4 dark:border-slate-800">
-              {selectedNotification && (
-                <button type="button" onClick={() => setSelectedNotification(null)} aria-label="Rudi kwenye orodha ya taarifa" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
-              )}
               <div className="min-w-0 flex-1">
-                <h2 id="navbar-notifications-title" className="font-extrabold text-slate-950 dark:text-white">
-                  {selectedNotification ? 'Maelezo ya taarifa' : 'Taarifa zako'}
-                </h2>
+                <h2 id="navbar-notifications-title" className="font-extrabold text-slate-950 dark:text-white">Taarifa zako</h2>
                 <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                  {selectedNotification ? 'Ujumbe uliofunguliwa ndani ya popup' : unreadNotifications > 0 ? `${unreadNotifications} hazijasomwa` : 'Upo kwenye taarifa zako za hivi karibuni'}
+                  {unreadNotifications > 0 ? `${unreadNotifications} hazijasomwa` : 'Upo kwenye taarifa zako za hivi karibuni'}
                 </p>
               </div>
-              <button type="button" onClick={() => { setNotificationOpen(false); setSelectedNotification(null) }} aria-label="Funga taarifa" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">
+              <button type="button" onClick={() => setNotificationOpen(false)} aria-label="Funga taarifa" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">
                 <X className="h-5 w-5" />
               </button>
             </header>
-
-            {selectedNotification ? (
-              <div className="overflow-y-auto p-5">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-200">
-                  <Bell className="h-6 w-6" />
+            <PushNotificationSetup variant="compact" />
+            <div className="min-h-0 flex-1 overflow-y-auto p-2">
+              {notificationsLoading ? (
+                <p className="p-6 text-center text-sm text-slate-500 dark:text-slate-400">Inapakia taarifa...</p>
+              ) : notificationRows.length === 0 ? (
+                <div className="p-8 text-center">
+                  <Bell className="mx-auto h-8 w-8 text-emerald-600" />
+                  <p className="mt-3 font-bold text-slate-900 dark:text-white">Bado hakuna taarifa</p>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Taarifa mpya zitaonekana hapa.</p>
                 </div>
-                <h3 className="mt-4 text-lg font-extrabold text-slate-950 dark:text-white">{selectedNotification.title}</h3>
-                <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-600 dark:text-slate-300">{selectedNotification.body || 'Hakuna maelezo zaidi ya taarifa hii.'}</p>
-                <p className="mt-4 text-xs text-slate-400">{new Date(selectedNotification.created_at).toLocaleString('sw-TZ', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Africa/Dar_es_Salaam' })}</p>
-                <div className="mt-5 flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200">
-                  <CheckCheck className="h-4 w-4 shrink-0" />
-                  Umefungua taarifa hii bila kuondoka kwenye ukurasa.
-                </div>
-              </div>
-            ) : (
-              <div className="min-h-0 flex-1 overflow-y-auto p-2">
-                {notificationsLoading ? (
-                  <p className="p-6 text-center text-sm text-slate-500 dark:text-slate-400">Inapakia taarifa...</p>
-                ) : notificationRows.length === 0 ? (
-                  <div className="p-8 text-center">
-                    <Bell className="mx-auto h-8 w-8 text-emerald-600" />
-                    <p className="mt-3 font-bold text-slate-900 dark:text-white">Bado hakuna taarifa</p>
-                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Taarifa mpya zitaonekana hapa.</p>
-                  </div>
-                ) : notificationRows.map((row) => (
-                  <button
-                    type="button"
-                    key={row.id}
-                    onClick={() => void openNotification(row)}
-                    className={`flex w-full items-start gap-3 rounded-2xl p-3 text-left transition hover:bg-emerald-50 dark:hover:bg-slate-800 ${row.is_read ? 'opacity-75' : 'bg-emerald-50/60 dark:bg-emerald-950/20'}`}
-                  >
-                    <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-200"><Bell className="h-4 w-4" /></span>
-                    <span className="min-w-0 flex-1">
-                      <span className="flex items-center gap-2">
-                        <span className="truncate text-sm font-extrabold text-slate-900 dark:text-white">{row.title}</span>
-                        {!row.is_read && <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-500" />}
-                      </span>
-                      <span className="mt-1 line-clamp-2 block text-xs leading-5 text-slate-600 dark:text-slate-300">{row.body}</span>
-                      <span className="mt-2 block text-[10px] text-slate-400">{new Date(row.created_at).toLocaleString('sw-TZ', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Africa/Dar_es_Salaam' })}</span>
+              ) : notificationRows.map((row) => (
+                <button
+                  type="button"
+                  key={row.id}
+                  onClick={() => void openNotification(row)}
+                  className={`flex w-full items-start gap-3 rounded-2xl p-3 text-left transition hover:bg-emerald-50 dark:hover:bg-slate-800 ${row.is_read ? 'opacity-75' : 'bg-emerald-50/60 dark:bg-emerald-950/20'}`}
+                >
+                  <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-200"><Bell className="h-4 w-4" /></span>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center gap-2">
+                      <span className="text-sm font-extrabold text-slate-900 dark:text-white">{row.title}</span>
+                      {!row.is_read && <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-500" />}
                     </span>
-                  </button>
-                ))}
-              </div>
-            )}
+                    <span className="mt-1 line-clamp-2 block text-xs leading-5 text-slate-600 dark:text-slate-300">{row.body}</span>
+                    <span className="mt-2 block text-[10px] text-slate-400">{new Date(row.created_at).toLocaleString('sw-TZ', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Africa/Dar_es_Salaam' })}</span>
+                    <span className="mt-2 block text-[10px] font-bold text-emerald-700 dark:text-emerald-300">Gusa kufungua →</span>
+                  </span>
+                </button>
+              ))}
+            </div>
           </section>
         </div>
       )}
