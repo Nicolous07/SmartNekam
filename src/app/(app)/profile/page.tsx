@@ -41,11 +41,11 @@ export default async function ProfilePage() {
   return <div className="stagger mx-auto max-w-4xl space-y-5">
     <section className="geometric-card overflow-visible">
       <div className="relative h-36 overflow-visible sm:h-48">
-        <div className="geometric-hero absolute inset-0 overflow-hidden rounded-t-3xl">
-          {profile.cover_url && <img src={profile.cover_url} alt="Cover picha ya profile" className="absolute inset-0 h-full w-full rounded-t-3xl object-cover" />}
-          <div className="absolute inset-0 rounded-t-3xl bg-gradient-to-r from-[#111827]/60 via-[#111827]/20 to-transparent" />
-          <div className="absolute -right-8 -top-12 h-48 w-48 rounded-full border-[28px] border-white/10" />
-          <div className="absolute left-5 top-4 text-[10px] font-extrabold uppercase tracking-[.18em] text-emerald-100 drop-shadow sm:text-xs">SmartNekam · Student Profile</div>
+        <div className="absolute inset-0 overflow-hidden rounded-t-3xl bg-gradient-to-br from-[#17264D] via-[#20264D] to-[#302259]">
+          {profile.cover_url && <img src={profile.cover_url} alt="Cover picha ya profile" className="absolute inset-0 z-0 h-full w-full object-cover" />}
+          <div className="absolute inset-0 z-[1] bg-gradient-to-r from-[#111827]/60 via-[#111827]/20 to-transparent" />
+          <div className="absolute -right-8 -top-12 z-[2] h-48 w-48 rounded-full border-[28px] border-white/10" />
+          <div className="absolute left-5 top-4 z-[2] text-[10px] font-extrabold uppercase tracking-[.18em] text-emerald-100 drop-shadow sm:text-xs">SmartNekam · Student Profile</div>
         </div>
         {profile.avatar_url ? (
           <ImageLightbox
