@@ -65,7 +65,7 @@ function getSocialVideoEmbed(href: string | undefined): SocialVideoEmbed | null 
     else if (['shorts', 'embed', 'live', 'v'].includes(first)) videoId = second
   }
   if (/^[A-Za-z0-9_-]{11}$/.test(videoId)) {
-    return { platform: 'YouTube', src: `https://www.youtube-nocookie.com/embed/${videoId}?rel=0`, kind: 'iframe' }
+    return { platform: 'YouTube', src: `https://www.youtube-nocookie.com/embed/${videoId}?controls=1&playsinline=1&rel=0`, kind: 'iframe' }
   }
 
   // TikTok's official player requires the post ID from /@creator/video/{id}.
@@ -73,7 +73,7 @@ function getSocialVideoEmbed(href: string | undefined): SocialVideoEmbed | null 
     const videoIndex = parts.indexOf('video')
     const tiktokId = videoIndex >= 0 ? parts[videoIndex + 1] ?? '' : ''
     if (/^\d+$/.test(tiktokId)) {
-      return { platform: 'TikTok', src: `https://www.tiktok.com/player/v1/${tiktokId}?autoplay=0&controls=1`, kind: 'iframe' }
+      return { platform: 'TikTok', src: `https://www.tiktok.com/player/v1/${tiktokId}?autoplay=0&controls=1&play_button=1&progress_bar=1&volume_control=1&fullscreen_button=1&muted=0`, kind: 'iframe' }
     }
   }
 
@@ -185,17 +185,17 @@ export default function RichContent({
             if (embed?.kind === 'iframe') {
               const isVertical = embed.platform === 'TikTok' || embed.platform === 'Instagram'
               return (
-                <span className="my-3 block overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 shadow-sm dark:border-slate-800">
+                <span className={`my-3 block rounded-2xl border border-slate-200 bg-slate-950 shadow-sm dark:border-slate-800 ${embed.platform === 'TikTok' ? 'overflow-x-auto overflow-y-hidden' : 'overflow-hidden'}`}>
                   <span className="flex items-center gap-2 px-3 py-2.5 text-xs font-extrabold text-white">
                     <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-600"><span aria-hidden="true">▶</span></span>
                     <span>{embed.platform} · Cheza ndani ya SmartNekam</span>
                   </span>
-                  <span className={`relative mx-auto block w-full bg-black ${isVertical ? 'aspect-[9/16] max-h-[38rem] max-w-sm' : 'aspect-video'}`}>
+                  <span className={`relative mx-auto block w-full bg-black ${isVertical ? `aspect-[9/16] max-h-[38rem] max-w-sm ${embed.platform === 'TikTok' ? 'min-w-[325px]' : ''}` : 'aspect-video min-h-[220px]'}`}>
                     <iframe
                       src={embed.src}
                       title={`Video ya ${embed.platform} kwenye SmartNekam`}
                       loading="lazy"
-                      className="absolute inset-0 h-full w-full"
+                      className="pointer-events-auto absolute inset-0 block h-full w-full touch-manipulation" style={{ border: 0, pointerEvents: 'auto', touchAction: 'manipulation' }}
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; fullscreen; gyroscope; picture-in-picture; web-share"
                       referrerPolicy="strict-origin-when-cross-origin"
                       allowFullScreen
