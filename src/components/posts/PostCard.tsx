@@ -49,13 +49,13 @@ const CATEGORY_LABELS: Record<string, string> = {
 }
 
 function extractYouTubeVideoIds(content: string): string[] {
-  const links = content.match(/https?:\\/\\/(?:www\\.)?(?:youtube\\.com|youtu\\.be)\\/[^\\s<>"']+/gi) ?? []
+  const links = content.match(/https?:\/\/(?:www\.)?(?:youtube\.com|youtu\.be)\/[^\s<>"']+/gi) ?? []
   const ids: string[] = []
   for (const rawLink of links) {
-    const cleanLink = rawLink.replace(/[)\\]}.,!?;:]+$/g, '')
+    const cleanLink = rawLink.replace(/[)\]}.,!?;:]+$/g, '')
     try {
       const url = new URL(cleanLink)
-      const host = url.hostname.toLowerCase().replace(/^www\\./, '')
+      const host = url.hostname.toLowerCase().replace(/^www\./, '')
       let id = ''
       if (host === 'youtu.be') {
         id = url.pathname.split('/').filter(Boolean)[0] ?? ''
