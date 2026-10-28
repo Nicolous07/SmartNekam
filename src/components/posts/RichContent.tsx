@@ -28,6 +28,28 @@ function simplifyMathForReaders(src: string) {
   }).join('\n')
 }
 
+function getYouTubeVideoId(href: string | undefined): string | null {
+  if (!href) return null
+  let url: URL
+  try {
+    url = new URL(href)
+  } catch {
+    return null
+  }
+
+  const host = url.hostname.toLowerCase().replace(/^www\\./, '')
+  let id = ''
+  if (host === 'youtu.be') {
+    id = url.pathname.split('/').filter(Boolean)[0] ?? ''
+  } else if (['youtube.com', 'm.youtube.com', 'music.youtube.com', 'youtube-nocookie.com'].includes(host)) {
+    const parts = url.pathname.split('/').filter(Boolean)
+    if (url.pathname === '/watch') id = url.searchParams.get('v') ?? ''
+    else if (['shorts', 'embed', 'live', 'v'].includes(parts[0] ?? '')) id = parts[1] ?? ''
+  }
+
+  return /^[A-Za-z0-9_-]{11}$/.test(id) ? id : null
+}
+
 export default function RichContent({
   text,
   className = '',
@@ -79,16 +101,45 @@ export default function RichContent({
               {children}
             </code>
           ),
-          a: ({ children, href }) => (
-            <a
-              href={href}
-              target="_blank"
-              rel="noopener noreferrer nofollow"
-              className="font-medium text-emerald-700 underline dark:text-emerald-400"
-            >
-              {children}
-            </a>
-          ),
+          a: ({ children, href }) => {
+            const videoId = getYouTubeVideoId(typeof href === 'string' ? href : undefined)
+            if (videoId) {
+              return (
+                <span className="my-3 block overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 shadow-sm dark:border-slate-800">
+                  <span className="flex items-center gap-2 px-3 py-2.5 text-xs font-extrabold text-white">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-red-600">▶</span>
+                    <span>YouTube · Cheza ndani ya SmartNekam</span>
+                  </span>
+                  <span className="relative block aspect-video w-full bg-black">
+                    <iframe
+                      src={`https://www.youtube-nocookie.com/embed/${videoId}?rel=0`}
+                      title="Video ya YouTube kwenye SmartNekam"
+                      loading="lazy"
+                      className="absolute inset-0 h-full w-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      referrerPolicy="strict-origin-when-cross-origin"
+                      allowFullScreen
+                    />
+                  </span>
+                  <span className="block px-3 py-2 text-[11px] text-slate-300">
+                    <a href={href} target="_blank" rel="noopener noreferrer nofollow" className="font-semibold text-indigo-200 hover:text-white">
+                      Fungua kwenye YouTube
+                    </a>
+                  </span>
+                </span>
+              )
+            }
+            return (
+              <a
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer nofollow"
+                className="font-medium text-emerald-700 underline dark:text-emerald-400"
+              >
+                {children}
+              </a>
+            )
+          },
         }}
       >
         {simplifyMathForReaders(text)}

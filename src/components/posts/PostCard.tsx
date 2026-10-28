@@ -48,31 +48,6 @@ const CATEGORY_LABELS: Record<string, string> = {
   campus_life: 'Campus Life',
 }
 
-function extractYouTubeVideoIds(content: string): string[] {
-  const links = content.match(/https?:\S+/gi) ?? []
-  const ids: string[] = []
-  for (const rawLink of links) {
-    const cleanLink = rawLink.replace(/[)\]}.,!?;:]+$/g, '')
-    try {
-      const url = new URL(cleanLink)
-      const host = url.hostname.toLowerCase().replace(/^www\./, '')
-      let id = ''
-      if (host === 'youtu.be') {
-        id = url.pathname.split('/').filter(Boolean)[0] ?? ''
-      } else if (['youtube.com', 'm.youtube.com', 'music.youtube.com', 'youtube-nocookie.com'].includes(host)) {
-        const parts = url.pathname.split('/').filter(Boolean)
-        if (url.pathname === '/watch') id = url.searchParams.get('v') ?? ''
-        else if (['shorts', 'embed', 'live', 'v'].includes(parts[0] ?? '')) id = parts[1] ?? ''
-      }
-      if (/^[A-Za-z0-9_-]{11}$/.test(id) && !ids.includes(id)) ids.push(id)
-      if (ids.length >= 2) break
-    } catch {
-      // Ignore malformed or non-video YouTube links.
-    }
-  }
-  return ids
-}
-
 const ROLE_LABELS: Record<string, string> = {
   secondary_student: 'Mwanafunzi',
   university_student: 'Mwanachuo',
@@ -138,7 +113,6 @@ export default function PostCard({
     ? 'Mwanafunzi Asiyejulikana'
     : (post.author_name ?? post.author_username ?? 'Mtumiaji')
 
-  const youtubeVideoIds = extractYouTubeVideoIds(post.content)
 
   const [liked, setLiked] = useState(post.liked_by_me)
   const [likes, setLikes] = useState(post.like_count)
@@ -373,29 +347,6 @@ export default function PostCard({
         text={post.content}
         className="mt-3 text-sm leading-relaxed text-slate-800 dark:text-slate-200"
       />
-      {youtubeVideoIds.length > 0 && (
-        <div className="mt-3 space-y-3">
-          {youtubeVideoIds.map((videoId) => (
-            <section key={videoId} className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 shadow-sm dark:border-slate-800">
-              <div className="flex items-center gap-2 px-3 py-2.5 text-xs font-extrabold text-white">
-                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-red-600">▶</span>
-                <span>YouTube · Cheza ndani ya Home Feed</span>
-              </div>
-              <div className="aspect-video w-full bg-black">
-                <iframe
-                  src={`https://www.youtube-nocookie.com/embed/${videoId}?rel=0`}
-                  title="Video ya YouTube kwenye SmartNekam"
-                  loading="lazy"
-                  className="h-full w-full"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  referrerPolicy="strict-origin-when-cross-origin"
-                  allowFullScreen
-                />
-              </div>
-            </section>
-          ))}
-        </div>
-      )}
       {post.attachments && post.attachments.length > 0 ? (
         <div className={`mt-3 grid gap-2 ${post.attachments.length > 1 ? 'sm:grid-cols-2' : 'grid-cols-1'}`}>
           {post.attachments.map((attachment, attachmentIndex) => {
