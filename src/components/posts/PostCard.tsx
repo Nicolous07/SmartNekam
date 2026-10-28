@@ -1,10 +1,11 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Heart, MessageCircle, Share2, Send, Loader2, Check, CornerDownRight, X, FileText, FileImage, Download, UserPlus, Pin, Megaphone } from 'lucide-react'
+import { Heart, MessageCircle, Share2, Send, Loader2, Check, CornerDownRight, X, FileText, FileImage, Download, UserPlus, Pin, Megaphone, ImagePlus, Play } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import RichContent from '@/components/posts/RichContent'
 import ImageLightbox from '@/components/ui/ImageLightbox'
+import { useDataSaver } from '@/components/data-saver/DataSaverProvider'
 
 export type FeedPost = {
   id: string
@@ -110,6 +111,9 @@ export default function PostCard({
   viewerId?: string | null
 }) {
   const supabase = useMemo(() => createClient(), [])
+  const { lowDataMode } = useDataSaver()
+  const [revealedMedia, setRevealedMedia] = useState<Record<string, boolean>>({})
+  const revealMedia = (key: string) => setRevealedMedia((current) => ({ ...current, [key]: true }))
 
   const isAnon = Boolean(post.is_anonymous)
   const hiddenAuthor = isAnon && !post.author_name && !post.author_username
@@ -150,7 +154,7 @@ export default function PostCard({
         .select('id, post_id, parent_comment_id, content, created_at, author_name, author_username, author_avatar')
         .eq('post_id', post.id)
         .order('created_at', { ascending: true })
-        .limit(100)
+        .limit(lowDataMode ? 30 : 100)
       if (error) {
         setCommentError(`Imeshindikana kupakia comments: ${error.message}`)
       } else {
@@ -355,7 +359,19 @@ export default function PostCard({
         <div className={`mt-3 grid gap-2 ${post.attachments.length > 1 ? 'sm:grid-cols-2' : 'grid-cols-1'}`}>
           {post.attachments.map((attachment, attachmentIndex) => {
             const key = `${attachment.url}-${attachmentIndex}`
+            const sizeLabel = typeof attachment.size_bytes === 'number'
+              ? `${(attachment.size_bytes / (1024 * 1024)).toFixed(1)} MB`
+              : null
             if (attachment.mime_type?.startsWith('image/')) {
+              if (lowDataMode && !revealedMedia[key]) {
+                return (
+                  <button key={key} type="button" onClick={() => revealMedia(key)} className="flex min-h-32 w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-emerald-300 bg-emerald-50/70 p-4 text-center transition hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/40">
+                    <ImagePlus className="h-6 w-6 text-emerald-700 dark:text-emerald-300" />
+                    <span className="text-xs font-extrabold text-slate-900 dark:text-white">Picha imefichwa kuokoa data</span>
+                    <span className="text-[11px] text-slate-600 dark:text-slate-300">Gusa kupakia picha{sizeLabel ? ` · ${sizeLabel}` : ''}</span>
+                  </button>
+                )
+              }
               return (
                 <ImageLightbox
                   key={key}
@@ -365,17 +381,26 @@ export default function PostCard({
                   className="group relative block w-full overflow-hidden rounded-2xl border border-emerald-100 bg-slate-50 text-left dark:border-slate-800 dark:bg-slate-900"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={attachment.url} alt={attachment.name || 'Picha ya post'} loading="lazy" className="max-h-[28rem] w-full object-contain transition duration-300 group-hover:scale-[1.01]" />
+                  <img src={attachment.url} alt={attachment.name || 'Picha ya post'} loading="lazy" decoding="async" className="max-h-[28rem] w-full object-contain transition duration-300 group-hover:scale-[1.01]" />
                 </ImageLightbox>
               )
             }
             if (attachment.mime_type?.startsWith('video/')) {
+              if (lowDataMode && !revealedMedia[key]) {
+                return (
+                  <button key={key} type="button" onClick={() => revealMedia(key)} className="flex aspect-video w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-emerald-300 bg-slate-950 p-4 text-center transition hover:bg-slate-900">
+                    <Play className="h-7 w-7 text-emerald-300" />
+                    <span className="text-xs font-extrabold text-white">Video haijapakuliwa</span>
+                    <span className="text-[11px] text-slate-300">Gusa kuonyesha video{sizeLabel ? ` · ${sizeLabel}` : ''}</span>
+                  </button>
+                )
+              }
               return (
                 <div key={key} className="min-w-0 overflow-hidden rounded-2xl border border-emerald-100 bg-slate-950 dark:border-slate-800">
                   <video
                     controls
                     playsInline
-                    preload="metadata"
+                    preload={lowDataMode ? 'none' : 'metadata'}
                     aria-label={attachment.name || 'Video fupi ya post'}
                     className="aspect-video max-h-[28rem] w-full bg-black object-contain"
                   >
@@ -384,7 +409,7 @@ export default function PostCard({
                   </video>
                   <div className="flex items-center justify-between gap-2 px-3 py-2 text-[11px] text-slate-300">
                     <span className="min-w-0 truncate">{attachment.name || 'Video fupi'}</span>
-                    {typeof attachment.size_bytes === 'number' && <span className="shrink-0">{(attachment.size_bytes / (1024 * 1024)).toFixed(1)} MB</span>}
+                    {sizeLabel && <span className="shrink-0">{sizeLabel}</span>}
                     <a href={attachment.url} download={attachment.name || 'smartnekam-video'} className="shrink-0 font-bold text-indigo-200 hover:text-white">Pakua</a>
                   </div>
                 </div>
@@ -400,15 +425,23 @@ export default function PostCard({
           })}
         </div>
       ) : post.image_url ? (
-        <ImageLightbox
-          src={post.image_url}
-          alt="Picha ya post"
-          triggerLabel="Tazama picha ya post kwa ukubwa kamili"
-          className="mt-3 block w-full cursor-zoom-in overflow-hidden rounded-2xl border-0 bg-transparent p-0 text-left"
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={post.image_url} alt="Picha ya post" loading="lazy" className="max-h-96 w-full rounded-2xl object-cover" />
-        </ImageLightbox>
+        lowDataMode && !revealedMedia['main-post-image'] ? (
+          <button type="button" onClick={() => revealMedia('main-post-image')} className="mt-3 flex min-h-32 w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-emerald-300 bg-emerald-50/70 p-4 text-center transition hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/40">
+            <ImagePlus className="h-6 w-6 text-emerald-700 dark:text-emerald-300" />
+            <span className="text-xs font-extrabold text-slate-900 dark:text-white">Picha imefichwa kuokoa data</span>
+            <span className="text-[11px] text-slate-600 dark:text-slate-300">Gusa kupakia picha</span>
+          </button>
+        ) : (
+          <ImageLightbox
+            src={post.image_url}
+            alt="Picha ya post"
+            triggerLabel="Tazama picha ya post kwa ukubwa kamili"
+            className="mt-3 block w-full cursor-zoom-in overflow-hidden rounded-2xl border-0 bg-transparent p-0 text-left"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={post.image_url} alt="Picha ya post" loading="lazy" decoding="async" className="max-h-96 w-full rounded-2xl object-cover" />
+          </ImageLightbox>
+        )
       ) : null}
 
       {likeError && <p role="status" className="mb-2 text-[11px] text-red-600 dark:text-red-300">{likeError}</p>}
