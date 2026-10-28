@@ -55,7 +55,7 @@ export default async function DashboardPage() {
   ])
 
   const profile = profileRes.data
-  const lowDataMode = Boolean(appPreferencesRes.data?.low_data_mode)
+  const lowDataMode = appPreferencesRes.data ? Boolean(appPreferencesRes.data.low_data_mode) : true
   if (!profile) redirect('/onboarding')
   const notes = (notesRes.data ?? []) as SimpleRow[]
   const papers = (papersRes.data ?? []) as SimpleRow[]
