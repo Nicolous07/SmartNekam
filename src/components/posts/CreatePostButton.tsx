@@ -151,6 +151,12 @@ export default function CreatePostButton() {
   }
 
   function addCapturedFile(file: File): boolean {
+    if (file.type.startsWith('video/') && attachmentsRef.current.some((item) => item.file.type.startsWith('video/'))) {
+      const message = 'Kila post inaweza kuwa na video moja. Unganisha klipu kwanza au ondoa video iliyopo.'
+      setError(message)
+      setCameraError(message)
+      return false
+    }
     if (!ALLOWED_TYPES.has(file.type)) {
       const message = `${file.name}: aina hii ya faili hairuhusiwi.`
       setError(message)
@@ -383,6 +389,10 @@ export default function CreatePostButton() {
         setError(`${file.name}: aina hii ya faili hairuhusiwi. Tumia picha, video fupi (MP4/WebM/MOV), PDF, Word, Excel, PowerPoint, TXT au CSV.`)
         continue
       }
+      if (file.type.startsWith('video/') && (attachments.some((item) => item.file.type.startsWith('video/')) || accepted.some((item) => item.file.type.startsWith('video/')))) {
+        setError('Kila post inaweza kuwa na video moja. Tumia “Unganisha video” kwa klipu nyingi.')
+        continue
+      }
       const maxBytes = file.type.startsWith('video/') ? MAX_VIDEO_BYTES : MAX_FILE_BYTES
       if (file.size > maxBytes) {
         setError(file.type.startsWith('video/')
@@ -407,6 +417,10 @@ export default function CreatePostButton() {
     if (!files.length) return
     if (attachmentsRef.current.length >= MAX_FILES) {
       setError(`Unaweza kuambatisha faili zisizozidi ${MAX_FILES} kwa post moja.`)
+      return
+    }
+    if (attachmentsRef.current.some((item) => item.file.type.startsWith('video/'))) {
+      setError('Tayari una video kwenye post hii. Ondoa video hiyo kwanza kabla ya kuongeza video iliyounganishwa.')
       return
     }
     if (files.length < 2) {
@@ -454,6 +468,10 @@ export default function CreatePostButton() {
   }
 
   async function submit() {
+    if (mergingVideo) {
+      setError('Subiri kuunganishwa kwa video kumalizike kabla ya kuchapisha.')
+      return
+    }
     const text = content.trim()
     if (text.length < 3) { setError('Andika angalau herufi 3 ili wanafunzi waelewe unachoshiriki.'); return }
     setBusy(true); setError('')
@@ -544,7 +562,7 @@ export default function CreatePostButton() {
 
           {error && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">{error}</p>}
         </div>
-        <div className="flex items-center justify-between gap-3 border-t border-emerald-100 bg-white/80 px-4 py-3 dark:border-slate-800 dark:bg-slate-950/80 sm:px-5"><p className="hidden text-xs text-slate-500 sm:block">Andika kwa lugha iliyo wazi ili kila mwanafunzi aelewe.</p><div className="ml-auto flex gap-2"><button type="button" onClick={close} disabled={busy} className="rounded-xl px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-100 disabled:opacity-50 dark:text-slate-300 dark:hover:bg-slate-800">Ghairi</button><button type="button" onClick={() => void submit()} disabled={busy || content.trim().length < 3} className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-extrabold text-white transition hover:bg-emerald-500 disabled:opacity-50">{busy ? <Loader2 className="h-4 w-4 animate-spin"/> : <Plus className="h-4 w-4"/>}{busy ? 'Inapakia na kuchapisha...' : 'Chapisha post'}</button></div></div>
+        <div className="flex items-center justify-between gap-3 border-t border-emerald-100 bg-white/80 px-4 py-3 dark:border-slate-800 dark:bg-slate-950/80 sm:px-5"><p className="hidden text-xs text-slate-500 sm:block">Andika kwa lugha iliyo wazi ili kila mwanafunzi aelewe.</p><div className="ml-auto flex gap-2"><button type="button" onClick={close} disabled={busy} className="rounded-xl px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-100 disabled:opacity-50 dark:text-slate-300 dark:hover:bg-slate-800">Ghairi</button><button type="button" onClick={() => void submit()} disabled={busy || mergingVideo || content.trim().length < 3} className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-extrabold text-white transition hover:bg-emerald-500 disabled:opacity-50">{busy ? <Loader2 className="h-4 w-4 animate-spin"/> : <Plus className="h-4 w-4"/>}{busy ? 'Inapakia na kuchapisha...' : 'Chapisha post'}</button></div></div>
       </section>
     </div>}
     {cameraOpen && <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-5">
