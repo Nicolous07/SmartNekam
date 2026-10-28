@@ -82,8 +82,9 @@ function timeAgo(iso: string) {
 }
 
 function Avatar({ name, url, size = 'h-11 w-11' }: { name: string; url: string | null; size?: string }) {
+  const { lowDataMode } = useDataSaver()
   const avatarClass = `${size} flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-emerald-600 text-sm font-bold text-white`
-  if (!url) {
+  if (!url || lowDataMode) {
     return <span className={avatarClass}>{initials(name)}</span>
   }
   return (
