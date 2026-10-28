@@ -1565,3 +1565,32 @@ html.dark .sn-chat-send:disabled {
 html.dark .sn-chat-message-bubble-other > p.whitespace-pre-wrap {
   color: #f4f6fb !important;
 }
+
+
+/* SMARTNEKAM MOBILE VIDEO TOUCH FIX
+   Touch browsers can retain a hover/transform state on animated feed cards.
+   Keep cards containing native video or embedded players stable and tappable. */
+@media (hover: none) and (pointer: coarse) {
+  .geometric-card:has(iframe),
+  .geometric-card:has(video) {
+    animation: none !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  .geometric-card:has(iframe):hover,
+  .geometric-card:has(video):hover {
+    transform: none !important;
+  }
+
+  .geometric-card:has(iframe) iframe,
+  .geometric-card:has(video) video {
+    pointer-events: auto !important;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .geometric-card:has(iframe) {
+    isolation: isolate;
+  }
+}
