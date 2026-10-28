@@ -40,7 +40,7 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth')
   const today = tanzaniaDate()
-  const [profileRes, notesRes, papersRes, questionsRes, opportunitiesRes, coursesRes, challengeRes, attemptRes, unreadRes, leaderboardRes] = await Promise.all([
+  const [profileRes, notesRes, papersRes, questionsRes, opportunitiesRes, coursesRes, challengeRes, attemptRes, unreadRes, leaderboardRes, appPreferencesRes] = await Promise.all([
     supabase.from('profiles').select('full_name, username, avatar_url, level, xp, coins, streak, longest_streak, role').eq('id', user.id).maybeSingle(),
     supabase.from('notes').select('id,title,description,level,created_at,subject_id').eq('status', 'approved').order('created_at', { ascending: false }).limit(4),
     supabase.from('past_papers').select('id,title,level,year,exam_type,created_at,subject_id').eq('status', 'approved').order('created_at', { ascending: false }).limit(3),
@@ -51,9 +51,11 @@ export default async function DashboardPage() {
     supabase.from('quiz_attempts').select('id,status,score,total_marks,xp_awarded').eq('user_id', user.id).eq('challenge_date', today).maybeSingle(),
     supabase.from('notifications').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('is_read', false),
     supabase.rpc('get_smartnekam_leaderboard', { p_period: 'week', p_limit: 5 }),
+    supabase.from('user_app_preferences').select('low_data_mode').eq('user_id', user.id).maybeSingle(),
   ])
 
   const profile = profileRes.data
+  const lowDataMode = Boolean(appPreferencesRes.data?.low_data_mode)
   if (!profile) redirect('/onboarding')
   const notes = (notesRes.data ?? []) as SimpleRow[]
   const papers = (papersRes.data ?? []) as SimpleRow[]
@@ -69,7 +71,7 @@ export default async function DashboardPage() {
     <div className="stagger grid gap-5 xl:h-[calc(100dvh-4.5rem)] xl:grid-cols-[minmax(0,1fr)_320px] xl:overflow-hidden">
       <div className="min-w-0 space-y-5 xl:h-full xl:overflow-y-auto xl:overscroll-contain xl:pr-2 no-scrollbar">
         <section className="geometric-hero glow-green relative isolate overflow-hidden rounded-3xl px-5 py-6 text-white sm:px-8 sm:py-8">
-          <Image src="/images/reference-home-feed.webp" alt="Wanafunzi wakijifunza pamoja kwenye maabara ya kompyuta" fill priority sizes="(max-width: 768px) 100vw, 70vw" className="absolute inset-0 -z-20 object-cover object-center opacity-60" />
+          {!lowDataMode && <Image src="/images/reference-home-feed.webp" alt="Wanafunzi wakijifunza pamoja kwenye maabara ya kompyuta" fill sizes="(max-width: 768px) 100vw, 70vw" className="absolute inset-0 -z-20 object-cover object-center opacity-60" />}
           <div className="absolute inset-0 -z-10 bg-gradient-to-br from-[#0B0F1A]/90 via-[#17264D]/75 to-[#302259]/70" />
           <div className="max-w-2xl">
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-100">SmartNekam · Soma. Ungana. Pata Fursa.</p>
