@@ -28,7 +28,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     .maybeSingle()
 
   return (
-    <DataSaverProvider initialLowDataMode={Boolean(appPreferences?.low_data_mode)}>
+    <DataSaverProvider initialLowDataMode={appPreferences ? Boolean(appPreferences.low_data_mode) : true}>
       <div className="min-h-screen">
         <AppNavbar profile={profile as NavProfile} isAdmin={isStaffUser(profile.role, user.email)} />
         <main className="mx-auto w-full max-w-7xl px-4 pb-24 pt-4 lg:px-6 lg:pb-0"><MobileSwipeNavigation>{children}</MobileSwipeNavigation></main>
