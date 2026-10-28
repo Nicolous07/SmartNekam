@@ -5,6 +5,7 @@ import { isStaffUser } from '@/lib/admin'
 import CreatePostButton from '@/components/posts/CreatePostButton'
 import MobileSwipeNavigation from '@/components/layout/MobileSwipeNavigation'
 import NotificationRealtimeBridge from '@/components/notifications/NotificationRealtimeBridge'
+import { DataSaverProvider } from '@/components/data-saver/DataSaverProvider'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -20,12 +21,20 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (error || !profile) redirect('/onboarding')
   if (profile.status !== 'active') redirect('/auth?error=account_unavailable')
 
+  const { data: appPreferences } = await supabase
+    .from('user_app_preferences')
+    .select('low_data_mode')
+    .eq('user_id', user.id)
+    .maybeSingle()
+
   return (
-    <div className="min-h-screen">
-      <AppNavbar profile={profile as NavProfile} isAdmin={isStaffUser(profile.role, user.email)} />
-      <main className="mx-auto w-full max-w-7xl px-4 pb-24 pt-4 lg:px-6 lg:pb-0"><MobileSwipeNavigation>{children}</MobileSwipeNavigation></main>
-      <CreatePostButton />
-      <NotificationRealtimeBridge />
-    </div>
+    <DataSaverProvider initialLowDataMode={Boolean(appPreferences?.low_data_mode)}>
+      <div className="min-h-screen">
+        <AppNavbar profile={profile as NavProfile} isAdmin={isStaffUser(profile.role, user.email)} />
+        <main className="mx-auto w-full max-w-7xl px-4 pb-24 pt-4 lg:px-6 lg:pb-0"><MobileSwipeNavigation>{children}</MobileSwipeNavigation></main>
+        <CreatePostButton />
+        <NotificationRealtimeBridge />
+      </div>
+    </DataSaverProvider>
   )
 }
