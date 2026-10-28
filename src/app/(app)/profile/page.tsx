@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import { signOut } from '@/app/(app)/actions'
 import ThemeToggle from '@/components/layout/ThemeToggle'
 import ProfileSettingsPanel from '@/components/profile/ProfileSettingsPanel'
+import ImageLightbox from '@/components/ui/ImageLightbox'
 import { isStaffUser } from '@/lib/admin'
 import { SMARTNEKAM_PAYMENTS_ENABLED } from '@/lib/payments/feature'
 
@@ -39,14 +40,28 @@ export default async function ProfilePage() {
 
   return <div className="stagger mx-auto max-w-4xl space-y-5">
     <section className="geometric-card overflow-visible">
-      <div className="geometric-hero relative h-36 overflow-visible rounded-t-3xl sm:h-48">
-        {profile.cover_url && <img src={profile.cover_url} alt="Cover picha ya profile" className="absolute inset-0 h-full w-full rounded-t-3xl object-cover" />}
-        <div className="absolute inset-0 rounded-t-3xl bg-gradient-to-r from-[#111827]/60 via-[#111827]/20 to-transparent" />
-        <div className="absolute -right-8 -top-12 h-48 w-48 rounded-full border-[28px] border-white/10" />
-        <div className="absolute left-5 top-4 text-[10px] font-extrabold uppercase tracking-[.18em] text-emerald-100 drop-shadow sm:text-xs">SmartNekam · Student Profile</div>
-        <div className="absolute bottom-0 left-5 z-20 flex h-24 w-24 translate-y-1/2 items-center justify-center overflow-visible rounded-full bg-gradient-to-br from-emerald-500 to-emerald-900 text-2xl font-black text-white ring-4 ring-white shadow-xl dark:ring-[#131d31]">
-          {profile.avatar_url ? <img src={profile.avatar_url} alt={profile.full_name ?? 'Picha ya mwanafunzi'} className="h-full w-full rounded-full object-cover" /> : initials(profile.full_name ?? '')}
+      <div className="relative h-36 overflow-visible sm:h-48">
+        <div className="geometric-hero absolute inset-0 overflow-hidden rounded-t-3xl">
+          {profile.cover_url && <img src={profile.cover_url} alt="Cover picha ya profile" className="absolute inset-0 h-full w-full rounded-t-3xl object-cover" />}
+          <div className="absolute inset-0 rounded-t-3xl bg-gradient-to-r from-[#111827]/60 via-[#111827]/20 to-transparent" />
+          <div className="absolute -right-8 -top-12 h-48 w-48 rounded-full border-[28px] border-white/10" />
+          <div className="absolute left-5 top-4 text-[10px] font-extrabold uppercase tracking-[.18em] text-emerald-100 drop-shadow sm:text-xs">SmartNekam · Student Profile</div>
         </div>
+        {profile.avatar_url ? (
+          <ImageLightbox
+            src={profile.avatar_url}
+            alt={profile.full_name ?? 'Picha ya mwanafunzi'}
+            triggerLabel="Tazama picha yako ya profile kwa ukubwa kamili"
+            className="absolute bottom-0 left-5 z-[80] flex h-24 w-24 translate-y-1/2 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-gradient-to-br from-emerald-500 to-emerald-900 p-0 text-2xl font-black text-white shadow-xl outline-none cursor-zoom-in focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-[#131d31]"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={profile.avatar_url} alt="" className="h-full w-full rounded-full object-cover" />
+          </ImageLightbox>
+        ) : (
+          <div className="absolute bottom-0 left-5 z-[80] flex h-24 w-24 translate-y-1/2 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-gradient-to-br from-emerald-500 to-emerald-900 text-2xl font-black text-white shadow-xl dark:border-[#131d31]">
+            {initials(profile.full_name ?? '')}
+          </div>
+        )}
       </div>
       <div className="px-5 pb-5 pt-14">
         <div className="flex flex-wrap items-start justify-between gap-3">
