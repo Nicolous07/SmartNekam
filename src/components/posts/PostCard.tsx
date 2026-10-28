@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Heart, MessageCircle, Share2, Send, Loader2, Check, CornerDownRight, X, FileText, FileImage, Download, UserPlus, Pin, Megaphone } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import RichContent from '@/components/posts/RichContent'
+import ImageLightbox from '@/components/ui/ImageLightbox'
 
 export type FeedPost = {
   id: string
@@ -80,17 +81,20 @@ function timeAgo(iso: string) {
 }
 
 function Avatar({ name, url, size = 'h-11 w-11' }: { name: string; url: string | null; size?: string }) {
+  const avatarClass = `${size} flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-emerald-600 text-sm font-bold text-white`
+  if (!url) {
+    return <span className={avatarClass}>{initials(name)}</span>
+  }
   return (
-    <span
-      className={`${size} flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-emerald-600 text-sm font-bold text-white`}
+    <ImageLightbox
+      src={url}
+      alt={`Picha ya profile ya ${name}`}
+      triggerLabel={`Tazama picha ya profile ya ${name} kwa ukubwa kamili`}
+      className={`${avatarClass} cursor-zoom-in border-0 p-0 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500`}
     >
-      {url ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={url} alt="" className="h-full w-full object-cover" />
-      ) : (
-        initials(name)
-      )}
-    </span>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={url} alt="" className="h-full w-full object-cover" />
+    </ImageLightbox>
   )
 }
 
@@ -353,10 +357,16 @@ export default function PostCard({
             const key = `${attachment.url}-${attachmentIndex}`
             if (attachment.mime_type?.startsWith('image/')) {
               return (
-                <a key={key} href={attachment.url} target="_blank" rel="noopener noreferrer" className="group relative block overflow-hidden rounded-2xl border border-emerald-100 bg-slate-50 dark:border-slate-800 dark:bg-slate-900">
+                <ImageLightbox
+                  key={key}
+                  src={attachment.url}
+                  alt={attachment.name || 'Picha ya post'}
+                  triggerLabel={`Tazama picha ya post kwa ukubwa kamili: ${attachment.name || 'Picha'}`}
+                  className="group relative block w-full overflow-hidden rounded-2xl border border-emerald-100 bg-slate-50 text-left dark:border-slate-800 dark:bg-slate-900"
+                >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={attachment.url} alt={attachment.name || 'Picha ya post'} loading="lazy" className="max-h-[28rem] w-full object-contain transition duration-300 group-hover:scale-[1.01]" />
-                </a>
+                </ImageLightbox>
               )
             }
             if (attachment.mime_type?.startsWith('video/')) {
@@ -390,8 +400,15 @@ export default function PostCard({
           })}
         </div>
       ) : post.image_url ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={post.image_url} alt="Picha ya post" loading="lazy" className="mt-3 max-h-96 w-full rounded-2xl object-cover" />
+        <ImageLightbox
+          src={post.image_url}
+          alt="Picha ya post"
+          triggerLabel="Tazama picha ya post kwa ukubwa kamili"
+          className="mt-3 block w-full cursor-zoom-in overflow-hidden rounded-2xl border-0 bg-transparent p-0 text-left"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={post.image_url} alt="Picha ya post" loading="lazy" className="max-h-96 w-full rounded-2xl object-cover" />
+        </ImageLightbox>
       ) : null}
 
       {likeError && <p role="status" className="mb-2 text-[11px] text-red-600 dark:text-red-300">{likeError}</p>}
