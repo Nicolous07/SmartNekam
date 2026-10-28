@@ -59,7 +59,7 @@ export default function PushNotificationSetup() {
       }, { onConflict: 'device_token' })
       if (saveError) throw new Error(`Usajili wa kifaa umeshindikana: ${saveError.message}. Hakikisha umeendesha SQL 033.`)
 
-      setSuccess('Push notifications zimewashwa kwenye kifaa hiki. Ukifunga app, taarifa zinaweza bado kufika ikiwa browser na mfumo wa kifaa vinaruhusu background push.')
+      setSuccess('Arifa zimewashwa kwenye kifaa hiki. Ili simu na ujumbe zifikie kifaa app ikiwa imefungwa, Supabase Edge Function smartnekam-push na Database Webhook pia lazima ziwe zimewashwa.')
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Imeshindikana kuwasha push notifications.')
     } finally {
@@ -70,14 +70,14 @@ export default function PushNotificationSetup() {
   return (
     <section className="geometric-card flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0 flex-1">
-        <h2 className="font-extrabold text-slate-950 dark:text-white">Allow notifications on your device</h2>
-        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Ruhusu arifa za SmartNekam kwenye kifaa hiki.</p>
+        <h2 className="font-extrabold text-slate-950 dark:text-white">Washa arifa kwenye kifaa hiki</h2>
+        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Washa ruhusa ya kifaa. Arifa za app iliyofungwa hutegemea pia usanidi wa push kwenye Supabase.</p>
         {success && <p role="status" className="mt-2 flex items-start gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />{success}</p>}
         {error && <p role="alert" className="mt-2 text-xs font-semibold text-rose-700 dark:text-rose-300">{error}</p>}
       </div>
       <button type="button" onClick={() => void enablePush()} disabled={busy} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-extrabold text-white transition hover:bg-emerald-700 disabled:cursor-wait disabled:opacity-60">
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <BellRing className="h-4 w-4" />}
-        {busy ? 'Enabling…' : 'Allow notifications'}
+        {busy ? 'Inawasha…' : 'Washa arifa'}
       </button>
     </section>
   )
