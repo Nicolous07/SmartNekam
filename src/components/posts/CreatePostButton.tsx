@@ -286,9 +286,13 @@ export default function CreatePostButton() {
     try {
       const candidates = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4']
       const mimeType = candidates.find((type) => MediaRecorder.isTypeSupported(type))
+      const bitrateOptions: MediaRecorderOptions = {
+        videoBitsPerSecond: lowDataMode ? 350000 : 650000,
+        audioBitsPerSecond: lowDataMode ? 32000 : 64000,
+      }
       const recorder = mimeType
-        ? new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 650000, audioBitsPerSecond: 64000 })
-        : new MediaRecorder(stream)
+        ? new MediaRecorder(stream, { ...bitrateOptions, mimeType })
+        : new MediaRecorder(stream, bitrateOptions)
       recorderRef.current = recorder
       recordedChunksRef.current = []
       setCameraError('')
