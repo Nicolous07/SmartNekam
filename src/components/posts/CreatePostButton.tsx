@@ -9,6 +9,8 @@ import {
 import { createClient } from '@/lib/supabase/client'
 import RichContent from '@/components/posts/RichContent'
 import { mergeVideoFilesInBrowser } from '@/lib/mergeVideos'
+import { useDataSaver } from '@/components/data-saver/DataSaverProvider'
+import { compressImageForLowData } from '@/lib/compressImageForLowData'
 
 type SelectedAttachment = { file: File; previewUrl: string | null }
 type UploadedAttachment = { url: string; name: string; mime_type: string; size_bytes: number }
@@ -47,6 +49,7 @@ function formatBytes(size: number) {
 
 export default function CreatePostButton() {
   const router = useRouter()
+  const { lowDataMode } = useDataSaver()
   const supabase = useMemo(() => createClient(), [])
   const fileRef = useRef<HTMLInputElement>(null)
   const cameraPhotoInputRef = useRef<HTMLInputElement>(null)
@@ -504,7 +507,10 @@ export default function CreatePostButton() {
 
       const uploaded: UploadedAttachment[] = []
       for (const item of attachments) {
-        const file = item.file
+        const sourceFile = item.file
+        const file = lowDataMode && sourceFile.type.startsWith('image/')
+          ? await compressImageForLowData(sourceFile)
+          : sourceFile
         const ext = (file.name.split('.').pop() || 'file').toLowerCase().replace(/[^a-z0-9]/g, '') || 'file'
         const path = `${user.id}/${crypto.randomUUID()}.${ext}`
         const { error: uploadError } = await supabase.storage.from('post-attachments').upload(path, file, {
@@ -586,7 +592,7 @@ export default function CreatePostButton() {
             <div className="flex flex-col gap-3">
               <div className="flex items-start gap-2.5">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200"><Paperclip className="h-5 w-5"/></span>
-                <div><p className="text-sm font-extrabold text-slate-900 dark:text-white">Picha, video fupi na viambatisho</p><p className="mt-0.5 text-xs leading-5 text-slate-500">Picha/nyaraka hadi 10 MB; video moja au video iliyounganishwa hadi 50 MB. Unaweza kuunganisha klipu 2–5 (jumla ya klipu za kuanzia hadi 150 MB). Video ya kamera: sekunde 30.</p></div>
+                <div><p className="text-sm font-extrabold text-slate-900 dark:text-white">Picha, video fupi na viambatisho</p><p className="mt-0.5 text-xs leading-5 text-slate-500">Picha/nyaraka hadi 10 MB; video moja au video iliyounganishwa hadi 50 MB. Low-data mode hupunguza ukubwa wa picha wakati wa kutuma. Unaweza kuunganisha klipu 2–5 (jumla ya klipu za kuanzia hadi 150 MB). Video ya kamera: sekunde 30.</p></div>
               </div>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <button type="button" onClick={() => openCamera('photo')} disabled={attachments.length >= MAX_FILES || busy || mergingVideo} className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-xs font-extrabold text-emerald-800 shadow-sm transition hover:border-emerald-400 hover:bg-emerald-50 disabled:opacity-50 dark:border-emerald-900 dark:bg-slate-900 dark:text-emerald-200 dark:hover:bg-slate-800"><Camera className="h-4 w-4"/> Piga picha</button>
