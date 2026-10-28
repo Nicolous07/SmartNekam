@@ -37,7 +37,7 @@ function getYouTubeVideoId(href: string | undefined): string | null {
     return null
   }
 
-  const host = url.hostname.toLowerCase().replace(/^www\\./, '')
+  const host = url.hostname.toLowerCase().replace(/^www\./, '')
   let id = ''
   if (host === 'youtu.be') {
     id = url.pathname.split('/').filter(Boolean)[0] ?? ''
