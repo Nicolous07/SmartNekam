@@ -102,6 +102,37 @@ function dayLabel(value: string | null) {
   return date.toLocaleDateString('sw-TZ', { day: 'numeric', month: 'short' })
 }
 
+async function compressChatImageForLowData(file: File): Promise<File> {
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) return file
+  try {
+    const bitmap = await createImageBitmap(file)
+    const maxDimension = 1280
+    const scale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height))
+    if (scale === 1 && file.size < 450 * 1024) {
+      bitmap.close()
+      return file
+    }
+    const canvas = document.createElement('canvas')
+    canvas.width = Math.max(1, Math.round(bitmap.width * scale))
+    canvas.height = Math.max(1, Math.round(bitmap.height * scale))
+    const context = canvas.getContext('2d')
+    if (!context) {
+      bitmap.close()
+      return file
+    }
+    context.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+    bitmap.close()
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/webp', 0.78))
+    if (!blob || blob.size >= file.size) return file
+    const extension = blob.type === 'image/jpeg' ? 'jpg' : blob.type === 'image/png' ? 'png' : 'webp'
+    const baseName = file.name.replace(/\.[^.]+$/, '') || 'smartnekam-image'
+    return new File([blob], `${baseName}.${extension}`, { type: blob.type || 'image/webp', lastModified: Date.now() })
+  } catch {
+    // Older browsers or unsupported image formats keep the original file.
+    return file
+  }
+}
+
 function resolveIncomingCallNotice(callSignalId?: string | null, conversationId?: string | null) {
   if (typeof window === 'undefined') return
   window.dispatchEvent(new CustomEvent('smartnekam:call-resolved', { detail: { callSignalId: callSignalId || undefined, conversationId: conversationId || undefined } }))
@@ -911,15 +942,16 @@ export default function DirectMessages() {
     let messageType = 'text'
     try {
       if (file) {
-        if (file.size > 10 * 1024 * 1024) throw new Error('Kiambatisho kisiwe zaidi ya 10 MB.')
-        if (file.type.startsWith('image/')) messageType = 'image'
-        else if (file.type.startsWith('audio/')) messageType = 'audio'
-        else if (file.type.startsWith('video/')) messageType = 'video'
+        const uploadFile = lowDataMode ? await compressChatImageForLowData(file) : file
+        if (uploadFile.size > 10 * 1024 * 1024) throw new Error('Kiambatisho kisiwe zaidi ya 10 MB.')
+        if (uploadFile.type.startsWith('image/')) messageType = 'image'
+        else if (uploadFile.type.startsWith('audio/')) messageType = 'audio'
+        else if (uploadFile.type.startsWith('video/')) messageType = 'video'
         else messageType = 'file'
-        const safeName = file.name.replace(/[^a-zA-Z0-9._-]+/g, '_') || `attachment-${Date.now()}`
+        const safeName = uploadFile.name.replace(/[^a-zA-Z0-9._-]+/g, '_') || `attachment-${Date.now()}`
         uploadedPath = `${selectedId}/${myUserId}/${Date.now()}-${safeName}`
-        const { error: uploadError } = await supabase.storage.from('smartnekam-chat-attachments').upload(uploadedPath, file, {
-          contentType: file.type || 'application/octet-stream',
+        const { error: uploadError } = await supabase.storage.from('smartnekam-chat-attachments').upload(uploadedPath, uploadFile, {
+          contentType: uploadFile.type || 'application/octet-stream',
           upsert: false,
         })
         if (uploadError) throw new Error(`Kiambatisho hakikupakiwa: ${uploadError.message}`)
