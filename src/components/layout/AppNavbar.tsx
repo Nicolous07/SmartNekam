@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
@@ -8,7 +8,7 @@ import {
   Home, Library, MessageSquare, Terminal, Briefcase,
   ShieldCheck, Search, Plus, MoreHorizontal, X, FileUp, FileText,
   Users, CircleHelp, BookMarked, CalendarDays, Trophy, Bell, UserRound,
-  Flame, BrainCircuit, Wallet,
+  Flame, BrainCircuit, Wallet, CheckCheck, ChevronLeft,
 } from 'lucide-react'
 import ThemeToggle from './ThemeToggle'
 import SearchDialog from './SearchDialog'
@@ -26,6 +26,16 @@ export type NavProfile = {
   streak: number
   longest_streak: number
   status: string
+}
+
+type NotificationPreview = {
+  id: string
+  title: string
+  body: string
+  notification_type: string
+  data: Record<string, unknown> | null
+  is_read: boolean
+  created_at: string
 }
 
 const ITEMS = [
@@ -55,30 +65,73 @@ export default function AppNavbar({ profile, isAdmin = false }: { profile: NavPr
   const pathname = usePathname()
   const supabase = useMemo(() => createClient(), [])
   const [unreadNotifications, setUnreadNotifications] = useState(0)
+  const [notificationOpen, setNotificationOpen] = useState(false)
+  const [notificationRows, setNotificationRows] = useState<NotificationPreview[]>([])
+  const [selectedNotification, setSelectedNotification] = useState<NotificationPreview | null>(null)
+  const [notificationsLoading, setNotificationsLoading] = useState(false)
   const [navHidden, setNavHidden] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [moreOpen, setMoreOpen] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`)
 
-  useEffect(() => { setNavHidden(false); setMoreOpen(false) }, [pathname])
-  useEffect(() => {
-    let disposed = false
-    const refreshUnread = async () => {
-      const { count, error } = await supabase.from('notifications')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', profile.id)
-        .eq('is_read', false)
-      if (!disposed && !error && typeof count === 'number') setUnreadNotifications(count)
+  useEffect(() => { setNavHidden(false); setMoreOpen(false); setNotificationOpen(false); setSelectedNotification(null) }, [pathname])
+  const loadNotifications = useCallback(async (showLoading = false) => {
+    if (showLoading) setNotificationsLoading(true)
+    try {
+      const [countResult, recentResult] = await Promise.all([
+        supabase.from('notifications')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', profile.id)
+          .eq('is_read', false),
+        supabase.from('notifications')
+          .select('id,title,body,notification_type,data,is_read,created_at')
+          .eq('user_id', profile.id)
+          .order('created_at', { ascending: false })
+          .limit(8),
+      ])
+      if (!countResult.error && typeof countResult.count === 'number') {
+        setUnreadNotifications(countResult.count)
+      }
+      if (!recentResult.error) {
+        setNotificationRows((recentResult.data ?? []) as NotificationPreview[])
+      }
+    } finally {
+      if (showLoading) setNotificationsLoading(false)
     }
-    void refreshUnread()
+  }, [profile.id, supabase])
+
+  function openNotifications() {
+    setMoreOpen(false)
+    setSelectedNotification(null)
+    setNotificationOpen(true)
+    void loadNotifications(true)
+  }
+
+  async function openNotification(row: NotificationPreview) {
+    setSelectedNotification(row)
+    if (row.is_read) return
+
+    setNotificationRows((current) => current.map((item) => item.id === row.id ? { ...item, is_read: true } : item))
+    setUnreadNotifications((count) => Math.max(0, count - 1))
+    const { error } = await supabase.from('notifications')
+      .update({ is_read: true, read_at: new Date().toISOString() })
+      .eq('id', row.id)
+      .eq('user_id', profile.id)
+    if (error) {
+      // Keep the popup responsive; the next realtime refresh will reconcile read state.
+    }
+  }
+
+  useEffect(() => {
+    void loadNotifications()
     const channel = supabase.channel(`smartnekam-navbar-notifications-${profile.id}`)
       .on('postgres_changes', {
         event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${profile.id}`,
-      }, () => { void refreshUnread() })
+      }, () => { void loadNotifications() })
       .subscribe()
-    return () => { disposed = true; void supabase.removeChannel(channel) }
-  }, [profile.id, supabase])
+    return () => { void supabase.removeChannel(channel) }
+  }, [profile.id, supabase, loadNotifications])
 
 
   useEffect(() => {
@@ -107,7 +160,7 @@ export default function AppNavbar({ profile, isAdmin = false }: { profile: NavPr
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setSearchOpen(true) }
-      if (e.key === 'Escape') { setCreateOpen(false); setMoreOpen(false); setSearchOpen(false) }
+      if (e.key === 'Escape') { setCreateOpen(false); setMoreOpen(false); setSearchOpen(false); setNotificationOpen(false); setSelectedNotification(null) }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -145,9 +198,14 @@ export default function AppNavbar({ profile, isAdmin = false }: { profile: NavPr
             <button type="button" onClick={() => setSearchOpen(true)} aria-label="Tafuta" className="rounded-xl p-2 text-slate-600 hover:bg-emerald-50 lg:hidden dark:text-slate-300 dark:hover:bg-slate-800"><Search className="h-5 w-5" /></button>
             <div className="relative lg:hidden">
               <button type="button" onClick={() => setMoreOpen((value) => !value)} aria-label="Fungua menyu ya ziada" aria-expanded={moreOpen} className="rounded-xl p-2 text-slate-600 hover:bg-violet-50 dark:text-slate-300 dark:hover:bg-slate-800"><MoreHorizontal className="h-5 w-5" /></button>
-              {moreOpen && <div className="anim-sheet-up absolute right-0 top-full z-[70] mt-2 max-h-[70vh] w-60 overflow-y-auto rounded-2xl border border-violet-100 bg-white p-2 shadow-xl dark:border-slate-700 dark:bg-[#121826]">{allMoreItems.map(({ href, label, icon: Icon }) => <Link key={href} href={href} onClick={() => setMoreOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-violet-50 dark:text-slate-200 dark:hover:bg-slate-800"><span className="relative"><Icon className="h-4 w-4 text-violet-500" />{href === '/notifications' && unreadNotifications > 0 && <span className="absolute -right-2 -top-2 min-w-4 rounded-full bg-rose-600 px-1 text-center text-[9px] font-black leading-4 text-white">{unreadNotifications > 99 ? '99+' : unreadNotifications}</span>}</span>{label}</Link>)}<div className="mt-1 border-t border-slate-100 p-2 dark:border-slate-800"><ThemeToggle /></div></div>}
+              {moreOpen && <div className="anim-sheet-up absolute right-0 top-full z-[70] mt-2 max-h-[70vh] w-60 overflow-y-auto rounded-2xl border border-violet-100 bg-white p-2 shadow-xl dark:border-slate-700 dark:bg-[#121826]">{allMoreItems.map(({ href, label, icon: Icon }) => {
+                const itemContent = <><span className="relative"><Icon className="h-4 w-4 text-violet-500" />{href === '/notifications' && unreadNotifications > 0 && <span className="absolute -right-2 -top-2 min-w-4 rounded-full bg-rose-600 px-1 text-center text-[9px] font-black leading-4 text-white">{unreadNotifications > 99 ? '99+' : unreadNotifications}</span>}</span>{label}</>
+                return href === '/notifications'
+                  ? <button key={href} type="button" onClick={openNotifications} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-slate-700 hover:bg-violet-50 dark:text-slate-200 dark:hover:bg-slate-800">{itemContent}</button>
+                  : <Link key={href} href={href} onClick={() => setMoreOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-violet-50 dark:text-slate-200 dark:hover:bg-slate-800">{itemContent}</Link>
+              })}<div className="mt-1 border-t border-slate-100 p-2 dark:border-slate-800"><ThemeToggle /></div></div>}
             </div>
-            <Link href="/notifications" aria-label="Taarifa" title="Taarifa" className="hidden rounded-xl p-2 text-slate-600 transition hover:bg-emerald-50 hover:text-emerald-700 lg:inline-flex dark:text-slate-300 dark:hover:bg-slate-800"><span className="relative inline-flex"><Bell className="h-4.5 w-4.5" />{unreadNotifications > 0 && <span className="absolute -right-2 -top-2 min-w-4 rounded-full bg-rose-600 px-1 text-center text-[9px] font-black leading-4 text-white">{unreadNotifications > 99 ? '99+' : unreadNotifications}</span>}</span></Link>
+            <button type="button" onClick={openNotifications} aria-label="Taarifa" title="Taarifa" aria-haspopup="dialog" aria-expanded={notificationOpen} className="hidden rounded-xl p-2 text-slate-600 transition hover:bg-emerald-50 hover:text-emerald-700 lg:inline-flex dark:text-slate-300 dark:hover:bg-slate-800"><span className="relative inline-flex"><Bell className="h-4.5 w-4.5" />{unreadNotifications > 0 && <span className="absolute -right-2 -top-2 min-w-4 rounded-full bg-rose-600 px-1 text-center text-[9px] font-black leading-4 text-white">{unreadNotifications > 99 ? '99+' : unreadNotifications}</span>}</span></button>
             <span className="hidden items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-extrabold text-emerald-800 lg:flex dark:bg-emerald-950 dark:text-emerald-200"><Flame className="h-3.5 w-3.5" />{profile.streak}</span>
             <Link href="/profile" title="XP na coins" className="hidden items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-extrabold text-amber-800 lg:flex dark:bg-amber-950 dark:text-amber-200"><span>XP</span>{profile.xp}</Link>
             <span className="hidden lg:block"><ThemeToggle /></span>
@@ -179,6 +237,83 @@ export default function AppNavbar({ profile, isAdmin = false }: { profile: NavPr
           </Link>)}
         </div>
       </nav>
+      {notificationOpen && (
+        <div
+          className="fixed inset-0 z-[90] flex items-end justify-center bg-slate-950/45 p-3 pb-24 backdrop-blur-sm sm:items-start sm:justify-end sm:pb-3 sm:pt-[4.5rem]"
+          onClick={() => { setNotificationOpen(false); setSelectedNotification(null) }}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="navbar-notifications-title"
+            onClick={(event) => event.stopPropagation()}
+            className="anim-sheet-up geometric-card flex max-h-[72vh] w-full max-w-md flex-col overflow-hidden rounded-3xl border border-emerald-100 p-0 shadow-2xl dark:border-slate-700 sm:max-h-[min(78vh,620px)]"
+          >
+            <header className="flex items-center gap-3 border-b border-slate-100 p-4 dark:border-slate-800">
+              {selectedNotification && (
+                <button type="button" onClick={() => setSelectedNotification(null)} aria-label="Rudi kwenye orodha ya taarifa" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+              )}
+              <div className="min-w-0 flex-1">
+                <h2 id="navbar-notifications-title" className="font-extrabold text-slate-950 dark:text-white">
+                  {selectedNotification ? 'Maelezo ya taarifa' : 'Taarifa zako'}
+                </h2>
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                  {selectedNotification ? 'Ujumbe uliofunguliwa ndani ya popup' : unreadNotifications > 0 ? `${unreadNotifications} hazijasomwa` : 'Upo kwenye taarifa zako za hivi karibuni'}
+                </p>
+              </div>
+              <button type="button" onClick={() => { setNotificationOpen(false); setSelectedNotification(null) }} aria-label="Funga taarifa" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">
+                <X className="h-5 w-5" />
+              </button>
+            </header>
+
+            {selectedNotification ? (
+              <div className="overflow-y-auto p-5">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-200">
+                  <Bell className="h-6 w-6" />
+                </div>
+                <h3 className="mt-4 text-lg font-extrabold text-slate-950 dark:text-white">{selectedNotification.title}</h3>
+                <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-600 dark:text-slate-300">{selectedNotification.body || 'Hakuna maelezo zaidi ya taarifa hii.'}</p>
+                <p className="mt-4 text-xs text-slate-400">{new Date(selectedNotification.created_at).toLocaleString('sw-TZ', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Africa/Dar_es_Salaam' })}</p>
+                <div className="mt-5 flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200">
+                  <CheckCheck className="h-4 w-4 shrink-0" />
+                  Umefungua taarifa hii bila kuondoka kwenye ukurasa.
+                </div>
+              </div>
+            ) : (
+              <div className="min-h-0 flex-1 overflow-y-auto p-2">
+                {notificationsLoading ? (
+                  <p className="p-6 text-center text-sm text-slate-500 dark:text-slate-400">Inapakia taarifa...</p>
+                ) : notificationRows.length === 0 ? (
+                  <div className="p-8 text-center">
+                    <Bell className="mx-auto h-8 w-8 text-emerald-600" />
+                    <p className="mt-3 font-bold text-slate-900 dark:text-white">Bado hakuna taarifa</p>
+                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Taarifa mpya zitaonekana hapa.</p>
+                  </div>
+                ) : notificationRows.map((row) => (
+                  <button
+                    type="button"
+                    key={row.id}
+                    onClick={() => void openNotification(row)}
+                    className={`flex w-full items-start gap-3 rounded-2xl p-3 text-left transition hover:bg-emerald-50 dark:hover:bg-slate-800 ${row.is_read ? 'opacity-75' : 'bg-emerald-50/60 dark:bg-emerald-950/20'}`}
+                  >
+                    <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-200"><Bell className="h-4 w-4" /></span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-center gap-2">
+                        <span className="truncate text-sm font-extrabold text-slate-900 dark:text-white">{row.title}</span>
+                        {!row.is_read && <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-500" />}
+                      </span>
+                      <span className="mt-1 line-clamp-2 block text-xs leading-5 text-slate-600 dark:text-slate-300">{row.body}</span>
+                      <span className="mt-2 block text-[10px] text-slate-400">{new Date(row.created_at).toLocaleString('sw-TZ', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Africa/Dar_es_Salaam' })}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
+      )}
       <SearchDialog open={searchOpen} onClose={() => setSearchOpen(false)} />
     </>
   )
