@@ -407,12 +407,16 @@ export default function DirectMessages() {
       const nextMessages = (data ?? []) as ChatMessage[]
       setMessages(nextMessages)
       const attachmentPaths = [...new Set(nextMessages.map((message) => message.attachment_path).filter((path): path is string => Boolean(path)))]
-      const signedEntries = await Promise.all(attachmentPaths.map(async (path) => {
-        if (/^https?:\/\//i.test(path)) return [path, path] as const
-        const { data: signed } = await supabase.storage.from('smartnekam-chat-attachments').createSignedUrl(path, 60 * 60)
-        return [path, signed?.signedUrl ?? ''] as const
-      }))
-      setAttachmentUrls(Object.fromEntries(signedEntries.filter((entry) => Boolean(entry[1]))))
+      const externalEntries = attachmentPaths.filter((path) => /^https?:\/\//i.test(path)).map((path) => [path, path] as const)
+      const storagePaths = attachmentPaths.filter((path) => !/^https?:\/\//i.test(path))
+      let signedEntries: (readonly [string, string])[] = externalEntries
+      if (storagePaths.length) {
+        // One signed-URL request for all visible conversation attachments instead of one request per file.
+        const { data: signedRows } = await supabase.storage.from('smartnekam-chat-attachments').createSignedUrls(storagePaths, 60 * 60)
+        const storageEntries = (signedRows ?? []).map((item) => [item.path ?? '', item.signedUrl ?? ''] as const)
+        signedEntries = [...externalEntries, ...storageEntries]
+      }
+      setAttachmentUrls(Object.fromEntries(signedEntries.filter((entry) => Boolean(entry[0] && entry[1]))))
       if (nextMessages.length) {
         const { data: reactionRows } = await supabase.from('chat_message_reactions').select('message_id,user_id,reaction').in('message_id', nextMessages.map((message) => message.id))
         setReactions((reactionRows ?? []) as Reaction[])
