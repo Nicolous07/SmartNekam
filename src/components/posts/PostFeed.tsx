@@ -52,7 +52,7 @@ export default async function PostFeed() {
   const { data: appPreferences } = user
     ? await supabase.from('user_app_preferences').select('low_data_mode').eq('user_id', user.id).maybeSingle()
     : { data: null }
-  const lowDataMode = Boolean(appPreferences?.low_data_mode)
+  const lowDataMode = appPreferences ? Boolean(appPreferences.low_data_mode) : true
 
   const [feedResult, peopleResult, schoolsResult, universitiesResult, groupsResult, promotionsResult] = await Promise.all([
     supabase.from('posts_feed').select('id, author_id, category, subject, content, image_url, created_at, author_name, author_username, author_avatar, author_role, like_count, comment_count, share_count, liked_by_me, is_anonymous, attachments, author_follower_count, following_author_by_me').order('created_at', { ascending: false }).limit(lowDataMode ? 8 : 20),
