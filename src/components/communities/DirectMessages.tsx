@@ -677,7 +677,10 @@ export default function DirectMessages() {
       recordingStreamRef.current = stream
       recordingChunksRef.current = []
       const mimeType = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus'].find((type) => MediaRecorder.isTypeSupported(type))
-      const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream)
+      const voiceOptions: MediaRecorderOptions = { audioBitsPerSecond: lowDataMode ? 24000 : 48000 }
+      const recorder = mimeType
+        ? new MediaRecorder(stream, { ...voiceOptions, mimeType })
+        : new MediaRecorder(stream, voiceOptions)
       recorderRef.current = recorder
       recorder.ondataavailable = (event: BlobEvent) => {
         if (event.data.size > 0) recordingChunksRef.current.push(event.data)
