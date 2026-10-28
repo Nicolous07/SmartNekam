@@ -32,6 +32,7 @@ type SocialVideoEmbed = {
   platform: string
   src: string
   kind: 'iframe' | 'file'
+  isYouTubeShort?: boolean
 }
 
 function getSocialVideoEmbed(href: string | undefined): SocialVideoEmbed | null {
@@ -65,7 +66,12 @@ function getSocialVideoEmbed(href: string | undefined): SocialVideoEmbed | null 
     else if (['shorts', 'embed', 'live', 'v'].includes(first)) videoId = second
   }
   if (/^[A-Za-z0-9_-]{11}$/.test(videoId)) {
-    return { platform: 'YouTube', src: `https://www.youtube-nocookie.com/embed/${videoId}?controls=1&playsinline=1&rel=0`, kind: 'iframe' }
+    return {
+      platform: 'YouTube',
+      src: `https://www.youtube-nocookie.com/embed/${videoId}?controls=1&playsinline=1&rel=0`,
+      kind: 'iframe',
+      isYouTubeShort: host !== 'youtu.be' && first === 'shorts',
+    }
   }
 
   // TikTok's official player requires the post ID from /@creator/video/{id}.
@@ -182,10 +188,11 @@ export default function RichContent({
               )
             }
             if (embed?.kind === 'iframe') {
-              const isVertical = embed.platform === 'TikTok' || embed.platform === 'Instagram'
+              const isYouTubeShort = Boolean(embed.isYouTubeShort)
+              const isVertical = isYouTubeShort || embed.platform === 'TikTok' || embed.platform === 'Instagram'
               return (
                 <span className={`my-3 block rounded-2xl border border-slate-200 bg-slate-950 shadow-sm dark:border-slate-800 ${embed.platform === 'TikTok' ? 'overflow-x-auto overflow-y-hidden' : 'overflow-hidden'}`}>
-                  <span className={`relative mx-auto block w-full bg-black ${isVertical ? `aspect-[9/16] max-h-[38rem] max-w-sm ${embed.platform === 'TikTok' ? 'min-w-[325px]' : ''}` : 'aspect-video min-h-[220px]'}`}>
+                  <span className={`relative mx-auto block w-full bg-black ${isYouTubeShort ? 'aspect-[9/16] max-h-[min(78svh,760px)] max-w-md' : isVertical ? `aspect-[9/16] max-h-[38rem] max-w-sm ${embed.platform === 'TikTok' ? 'min-w-[325px]' : ''}` : 'aspect-video min-h-[220px]'}`}>
                     <iframe
                       src={embed.src}
                       title={`Video ya ${embed.platform} kwenye SmartNekam`}
