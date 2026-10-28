@@ -122,6 +122,7 @@ export default function CreatePostButton() {
     }
     setError('')
     setCameraMode(mode)
+    setCameraReady(false)
     setCameraError('')
     setCameraNotice('')
     setRecordingSeconds(0)
@@ -132,6 +133,14 @@ export default function CreatePostButton() {
       return
     }
     setCameraOpen(true)
+  }
+
+  function changeCameraMode(mode: 'photo' | 'video') {
+    if (recording || mode === cameraMode) return
+    setCameraReady(false)
+    setCameraError('')
+    setCameraNotice('')
+    setCameraMode(mode)
   }
 
   function addCapturedFile(file: File): boolean {
@@ -160,9 +169,6 @@ export default function CreatePostButton() {
   useEffect(() => {
     if (!cameraOpen) return
     let cancelled = false
-    setCameraReady(false)
-    setCameraError('')
-    setCameraNotice('')
 
     async function connectCamera() {
       if (!navigator.mediaDevices?.getUserMedia) {
@@ -314,7 +320,8 @@ export default function CreatePostButton() {
   }
 
   useEffect(() => () => {
-    clearRecordingTimers()
+    if (recordingIntervalRef.current !== null) window.clearInterval(recordingIntervalRef.current)
+    if (recordingStopTimeoutRef.current !== null) window.clearTimeout(recordingStopTimeoutRef.current)
     const recorder = recorderRef.current
     if (recorder && recorder.state !== 'inactive') {
       recorder.ondataavailable = null
@@ -491,8 +498,8 @@ export default function CreatePostButton() {
             {recording && <span className="absolute left-3 top-3 inline-flex items-center gap-2 rounded-full bg-red-600 px-3 py-1.5 text-xs font-extrabold text-white shadow-lg"><span className="h-2 w-2 animate-pulse rounded-full bg-white"/> REC {recordingSeconds}s</span>}
           </div>
           <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={() => setCameraMode('photo')} disabled={recording || cameraMode === 'photo'} className={`rounded-full px-3 py-2 text-xs font-extrabold transition ${cameraMode === 'photo' ? 'bg-emerald-600 text-white' : 'border border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-300'}`}><Camera className="mr-1 inline h-3.5 w-3.5"/> Picha</button>
-            <button type="button" onClick={() => setCameraMode('video')} disabled={recording || cameraMode === 'video'} className={`rounded-full px-3 py-2 text-xs font-extrabold transition ${cameraMode === 'video' ? 'bg-violet-600 text-white' : 'border border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-300'}`}><VideoIcon className="mr-1 inline h-3.5 w-3.5"/> Video</button>
+            <button type="button" onClick={() => changeCameraMode('photo')} disabled={recording || cameraMode === 'photo'} className={`rounded-full px-3 py-2 text-xs font-extrabold transition ${cameraMode === 'photo' ? 'bg-emerald-600 text-white' : 'border border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-300'}`}><Camera className="mr-1 inline h-3.5 w-3.5"/> Picha</button>
+            <button type="button" onClick={() => changeCameraMode('video')} disabled={recording || cameraMode === 'video'} className={`rounded-full px-3 py-2 text-xs font-extrabold transition ${cameraMode === 'video' ? 'bg-violet-600 text-white' : 'border border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-300'}`}><VideoIcon className="mr-1 inline h-3.5 w-3.5"/> Video</button>
           </div>
           {cameraNotice && <p className="rounded-xl bg-indigo-50 px-3 py-2 text-xs leading-5 text-indigo-800 dark:bg-indigo-950/30 dark:text-indigo-200">{cameraNotice}</p>}
           {cameraError && <div role="alert" className="space-y-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs leading-5 text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200"><p>{cameraError}</p><button type="button" onClick={() => { const mode = cameraMode; cancelCamera(); if (mode === 'photo') cameraPhotoInputRef.current?.click(); else cameraVideoInputRef.current?.click() }} className="rounded-lg border border-red-300 bg-white px-3 py-2 font-bold text-red-700 hover:bg-red-100 dark:border-red-800 dark:bg-slate-900 dark:text-red-200">Tumia kamera ya kifaa / chagua faili</button></div>}
