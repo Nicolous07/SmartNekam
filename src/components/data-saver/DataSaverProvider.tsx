@@ -17,25 +17,12 @@ const CHANGE_EVENT = 'smartnekam:low-data-mode-change'
 
 type SaveDataConnection = EventTarget & { saveData?: boolean }
 
-function browserRequestsDataSaving() {
-  if (typeof navigator === 'undefined') return false
-  const connection = (navigator as Navigator & { connection?: SaveDataConnection }).connection
-  return Boolean(connection?.saveData)
-}
-
 export function DataSaverProvider({ initialLowDataMode, children }: DataSaverProviderProps) {
   const [userEnabled, setUserEnabled] = useState(initialLowDataMode)
   const [networkEnabled, setNetworkEnabled] = useState(false)
 
   useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(STORAGE_KEY)
-      if (stored === 'true') setUserEnabled(true)
-      else if (stored === 'false') setUserEnabled(false)
-    } catch {
-      // Private-browsing restrictions should not prevent the app from running.
-    }
-
+    // The signed-in user's database preference is authoritative on page load.
     const connection = (navigator as Navigator & { connection?: SaveDataConnection }).connection
     const syncNetworkPreference = () => setNetworkEnabled(Boolean(connection?.saveData))
     syncNetworkPreference()
@@ -51,11 +38,17 @@ export function DataSaverProvider({ initialLowDataMode, children }: DataSaverPro
         // The database preference remains the source of truth across signed-in sessions.
       }
     }
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key !== STORAGE_KEY || (event.newValue !== 'true' && event.newValue !== 'false')) return
+      setUserEnabled(event.newValue === 'true')
+    }
     window.addEventListener(CHANGE_EVENT, handlePreferenceChange)
+    window.addEventListener('storage', handleStorageChange)
 
     return () => {
       connection?.removeEventListener?.('change', syncNetworkPreference)
       window.removeEventListener(CHANGE_EVENT, handlePreferenceChange)
+      window.removeEventListener('storage', handleStorageChange)
     }
   }, [])
 
