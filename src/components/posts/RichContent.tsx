@@ -28,7 +28,13 @@ function simplifyMathForReaders(src: string) {
   }).join('\n')
 }
 
-function getYouTubeVideoId(href: string | undefined): string | null {
+type SocialVideoEmbed = {
+  platform: string
+  src: string
+  kind: 'iframe' | 'file'
+}
+
+function getSocialVideoEmbed(href: string | undefined): SocialVideoEmbed | null {
   if (!href) return null
   let url: URL
   try {
@@ -36,18 +42,81 @@ function getYouTubeVideoId(href: string | undefined): string | null {
   } catch {
     return null
   }
+  if (url.protocol !== 'https:' && url.protocol !== 'http:') return null
 
-  const host = url.hostname.toLowerCase().replace(/^www\./, '')
-  let id = ''
-  if (host === 'youtu.be') {
-    id = url.pathname.split('/').filter(Boolean)[0] ?? ''
-  } else if (['youtube.com', 'm.youtube.com', 'music.youtube.com', 'youtube-nocookie.com'].includes(host)) {
-    const parts = url.pathname.split('/').filter(Boolean)
-    if (url.pathname === '/watch') id = url.searchParams.get('v') ?? ''
-    else if (['shorts', 'embed', 'live', 'v'].includes(parts[0] ?? '')) id = parts[1] ?? ''
+  const rawHost = url.hostname.toLowerCase()
+  const host = rawHost.startsWith('www.') ? rawHost.slice(4) : rawHost
+  const parts = url.pathname.split('/').filter(Boolean)
+  const first = parts[0] ?? ''
+  const second = parts[1] ?? ''
+
+  // Direct video URLs can use the browser's native player.
+  const path = url.pathname.toLowerCase()
+  if (['.mp4', '.webm', '.m4v', '.mov'].some((extension) => path.endsWith(extension))) {
+    return { platform: 'Video', src: url.href, kind: 'file' }
   }
 
-  return /^[A-Za-z0-9_-]{11}$/.test(id) ? id : null
+  // YouTube watch, short, live and embed links.
+  let videoId = ''
+  if (host === 'youtu.be') {
+    videoId = first
+  } else if (['youtube.com', 'm.youtube.com', 'music.youtube.com', 'youtube-nocookie.com'].includes(host)) {
+    if (url.pathname === '/watch') videoId = url.searchParams.get('v') ?? ''
+    else if (['shorts', 'embed', 'live', 'v'].includes(first)) videoId = second
+  }
+  if (/^[A-Za-z0-9_-]{11}$/.test(videoId)) {
+    return { platform: 'YouTube', src: `https://www.youtube-nocookie.com/embed/${videoId}?rel=0`, kind: 'iframe' }
+  }
+
+  // TikTok's official player requires the post ID from /@creator/video/{id}.
+  if (host === 'tiktok.com' || host.endsWith('.tiktok.com')) {
+    const videoIndex = parts.indexOf('video')
+    const tiktokId = videoIndex >= 0 ? parts[videoIndex + 1] ?? '' : ''
+    if (/^\d+$/.test(tiktokId)) {
+      return { platform: 'TikTok', src: `https://www.tiktok.com/player/v1/${tiktokId}?autoplay=0&controls=1`, kind: 'iframe' }
+    }
+  }
+
+  // Instagram public posts, reels and IGTV posts support an embed endpoint.
+  if (host === 'instagram.com' || host === 'instagr.am') {
+    if (['reel', 'p', 'tv'].includes(first) && second) {
+      return { platform: 'Instagram', src: `https://www.instagram.com/${first}/${encodeURIComponent(second)}/embed/`, kind: 'iframe' }
+    }
+  }
+
+  // Facebook's official video plugin accepts the original public video/reel URL.
+  if (host === 'facebook.com' || host.endsWith('.facebook.com') || host === 'fb.watch') {
+    return {
+      platform: 'Facebook',
+      src: `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(url.href)}&show_text=false`,
+      kind: 'iframe',
+    }
+  }
+
+  // X video is delivered as part of an embedded public post.
+  if (host === 'x.com' || host === 'twitter.com' || host === 'mobile.twitter.com') {
+    const statusIndex = parts.indexOf('status')
+    const postId = statusIndex >= 0 ? parts[statusIndex + 1] ?? '' : ''
+    if (/^\d+$/.test(postId)) {
+      return { platform: 'X', src: `https://platform.twitter.com/embed/Tweet.html?id=${postId}&dnt=true`, kind: 'iframe' }
+    }
+  }
+
+  if (host === 'vimeo.com' || host === 'player.vimeo.com') {
+    const vimeoId = host === 'player.vimeo.com' && first === 'video' ? second : first
+    if (/^\d+$/.test(vimeoId)) {
+      return { platform: 'Vimeo', src: `https://player.vimeo.com/video/${vimeoId}`, kind: 'iframe' }
+    }
+  }
+
+  if (host === 'dailymotion.com' || host === 'dai.ly') {
+    const dailyId = host === 'dai.ly' ? first : (first === 'video' ? second : '')
+    if (/^[A-Za-z0-9]+$/.test(dailyId)) {
+      return { platform: 'Dailymotion', src: `https://www.dailymotion.com/embed/video/${dailyId}`, kind: 'iframe' }
+    }
+  }
+
+  return null
 }
 
 export default function RichContent({
@@ -102,28 +171,39 @@ export default function RichContent({
             </code>
           ),
           a: ({ children, href }) => {
-            const videoId = getYouTubeVideoId(typeof href === 'string' ? href : undefined)
-            if (videoId) {
+            const embed = getSocialVideoEmbed(typeof href === 'string' ? href : undefined)
+            if (embed?.kind === 'file') {
+              return (
+                <span className="my-3 block overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 shadow-sm dark:border-slate-800">
+                  <span className="block px-3 py-2.5 text-xs font-extrabold text-white">Video · Cheza ndani ya SmartNekam</span>
+                  <video controls playsInline preload="metadata" className="max-h-[38rem] w-full bg-black" src={embed.src}>
+                    Kivinjari chako hakiwezi kucheza video hii.
+                  </video>
+                </span>
+              )
+            }
+            if (embed?.kind === 'iframe') {
+              const isVertical = embed.platform === 'TikTok' || embed.platform === 'Instagram'
               return (
                 <span className="my-3 block overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 shadow-sm dark:border-slate-800">
                   <span className="flex items-center gap-2 px-3 py-2.5 text-xs font-extrabold text-white">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-red-600">▶</span>
-                    <span>YouTube · Cheza ndani ya SmartNekam</span>
+                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-600"><span aria-hidden="true">▶</span></span>
+                    <span>{embed.platform} · Cheza ndani ya SmartNekam</span>
                   </span>
-                  <span className="relative block aspect-video w-full bg-black">
+                  <span className={`relative mx-auto block w-full bg-black ${isVertical ? 'aspect-[9/16] max-h-[38rem] max-w-sm' : 'aspect-video'}`}>
                     <iframe
-                      src={`https://www.youtube-nocookie.com/embed/${videoId}?rel=0`}
-                      title="Video ya YouTube kwenye SmartNekam"
+                      src={embed.src}
+                      title={`Video ya ${embed.platform} kwenye SmartNekam`}
                       loading="lazy"
                       className="absolute inset-0 h-full w-full"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; fullscreen; gyroscope; picture-in-picture; web-share"
                       referrerPolicy="strict-origin-when-cross-origin"
                       allowFullScreen
                     />
                   </span>
                   <span className="block px-3 py-2 text-[11px] text-slate-300">
                     <a href={href} target="_blank" rel="noopener noreferrer nofollow" className="font-semibold text-indigo-200 hover:text-white">
-                      Fungua kwenye YouTube
+                      Fungua kwenye {embed.platform}
                     </a>
                   </span>
                 </span>

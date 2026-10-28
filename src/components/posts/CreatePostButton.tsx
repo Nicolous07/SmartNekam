@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
-  Plus, X, ImagePlus, Loader2, Table2, Eye, Pencil, EyeOff,
+  Plus, X, ImagePlus, Loader2, Table2, Eye, Pencil, EyeOff, Link2,
   Paperclip, FileText, FileImage, Video as VideoIcon, Camera, Upload, CircleStop, File as FileIcon,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -66,6 +66,7 @@ export default function CreatePostButton() {
   const [category, setCategory] = useState<(typeof CATEGORIES)[number]['value']>('academics')
   const [subject, setSubject] = useState('')
   const [content, setContent] = useState('')
+  const [socialLink, setSocialLink] = useState('')
   const [anonymous, setAnonymous] = useState(false)
   const [attachments, setAttachments] = useState<SelectedAttachment[]>([])
   const [busy, setBusy] = useState(false)
@@ -81,6 +82,7 @@ export default function CreatePostButton() {
   const [mergeProgress, setMergeProgress] = useState('')
 
   attachmentsRef.current = attachments
+  const previewContent = [content.trim(), socialLink.trim()].filter(Boolean).join('\n\n')
   useEffect(() => {
     const openComposer = () => { setOpen(true); setError('') }
     window.addEventListener('smartnekam:create-post', openComposer)
@@ -366,7 +368,7 @@ export default function CreatePostButton() {
     cancelCamera()
     attachments.forEach(({ previewUrl }) => { if (previewUrl) URL.revokeObjectURL(previewUrl) })
     setShowPreview(false); setCategory('academics'); setSubject('')
-    setContent(''); setAnonymous(false); setAttachments([]); setError('')
+    setContent(''); setSocialLink(''); setAnonymous(false); setAttachments([]); setError('')
     if (fileRef.current) fileRef.current.value = ''
     if (cameraPhotoInputRef.current) cameraPhotoInputRef.current.value = ''
     if (cameraVideoInputRef.current) cameraVideoInputRef.current.value = ''
@@ -473,7 +475,26 @@ export default function CreatePostButton() {
       return
     }
     const text = content.trim()
-    if (text.length < 3) { setError('Andika angalau herufi 3 ili wanafunzi waelewe unachoshiriki.'); return }
+    const rawSocialLink = socialLink.trim()
+    let normalizedSocialLink = ''
+    if (rawSocialLink) {
+      const candidate = rawSocialLink.toLowerCase().startsWith('http://') || rawSocialLink.toLowerCase().startsWith('https://')
+        ? rawSocialLink
+        : `https://${rawSocialLink}`
+      try {
+        const parsed = new URL(candidate)
+        if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') throw new Error('Tumia link inayoanza na https:// au http://.')
+        normalizedSocialLink = parsed.href
+      } catch {
+        setError('Link si sahihi. Bandika anwani kamili ya video kutoka YouTube, TikTok, Instagram, Facebook, X, Vimeo au mtandao mwingine.')
+        return
+      }
+    }
+    if (text.length < 3 && !normalizedSocialLink) {
+      setError('Andika maelezo ya post au weka link ya video/mitandao ya kijamii.')
+      return
+    }
+    const postContent = [text, normalizedSocialLink].filter(Boolean).join('\n\n')
     setBusy(true); setError('')
     const uploadedPaths: string[] = []
     let postInserted = false
@@ -499,7 +520,7 @@ export default function CreatePostButton() {
         author_id: user.id,
         category,
         subject: category === 'academics' && subject ? subject : null,
-        content: text,
+        content: postContent,
         image_url: firstImage?.url ?? null,
         attachments: uploaded,
         is_anonymous: anonymous,
@@ -534,9 +555,32 @@ export default function CreatePostButton() {
 
           <div><div className="mb-2 flex flex-wrap items-center justify-between gap-2"><label htmlFor="post-content" className="text-xs font-bold uppercase tracking-wide text-slate-500">Maandishi ya post</label><div className="flex flex-wrap gap-1.5"><button type="button" onClick={() => insertSnippet(TABLE_TEMPLATE)} title="Ingiza jedwali" className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"><Table2 className="h-4 w-4"/> Jedwali</button><button type="button" onClick={() => setShowPreview((v) => !v)} aria-pressed={showPreview} className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold ${showPreview ? 'bg-emerald-600 text-white' : 'border border-slate-200 text-slate-700 dark:border-slate-700 dark:text-slate-200'}`}>{showPreview ? <Pencil className="h-4 w-4"/> : <Eye className="h-4 w-4"/>}{showPreview ? 'Hariri' : 'Hakiki'}</button></div></div>
 
-            {showPreview ? <div className="min-h-40 rounded-2xl border border-emerald-200 bg-white p-4 text-sm text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">{content.trim() ? <RichContent text={content} className="leading-7"/> : <p className="text-slate-400">Hakuna maandishi ya kuhakiki bado.</p>}</div> : <textarea id="post-content" ref={textRef} value={content} onChange={(e) => setContent(e.target.value.slice(0, MAX_CHARS))} rows={7} placeholder={'Andika swali, ufafanuzi, ushauri au mafanikio yako kwa lugha rahisi. Unaweza kutumia maandishi ya kawaida, mistari na jedwali.'} className="min-h-40 w-full resize-y rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-sm leading-7 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-emerald-900/30"/>}
+            {showPreview ? <div className="min-h-40 rounded-2xl border border-emerald-200 bg-white p-4 text-sm text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">{previewContent ? <RichContent text={previewContent} className="leading-7"/> : <p className="text-slate-400">Andika maelezo au weka link ya video ili kuona hakiki.</p>}</div> : <textarea id="post-content" ref={textRef} value={content} onChange={(e) => setContent(e.target.value.slice(0, MAX_CHARS))} rows={7} placeholder={'Andika swali, ufafanuzi, ushauri au mafanikio yako kwa lugha rahisi. Unaweza kutumia maandishi ya kawaida, mistari na jedwali.'} className="min-h-40 w-full resize-y rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-sm leading-7 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-emerald-900/30"/>}
             <div className="mt-1 flex items-center justify-between gap-2 text-[11px] text-slate-400"><span>Tumia maandishi rahisi, mistari au jedwali ili ujumbe wako ueleweke kwa urahisi.</span><span className="shrink-0">{content.length}/{MAX_CHARS}</span></div>
           </div>
+
+          <section className="rounded-2xl border border-indigo-200 bg-indigo-50/50 p-3 dark:border-indigo-900 dark:bg-indigo-950/20">
+            <label htmlFor="post-social-link" className="flex items-center gap-2 text-sm font-extrabold text-slate-900 dark:text-white">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-200"><Link2 className="h-4 w-4" /></span>
+              Weka link ya video / mitandao ya kijamii
+              <span className="text-xs font-semibold text-slate-500">(hiari)</span>
+            </label>
+            <input
+              id="post-social-link"
+              type="url"
+              inputMode="url"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              value={socialLink}
+              onChange={(e) => setSocialLink(e.target.value.slice(0, 2048))}
+              placeholder="Bandika link ya YouTube, TikTok, Instagram, Facebook, X, Vimeo..."
+              className="mt-3 w-full rounded-xl border border-indigo-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:ring-indigo-900/30"
+            />
+            <p className="mt-2 text-xs leading-5 text-slate-600 dark:text-slate-300">
+              Link itahifadhiwa pamoja na post na kuonyeshwa hapa kwenye Home Feed. Video za YouTube, TikTok, Instagram Reels, Facebook, X, Vimeo na Dailymotion zitachezwa ndani ya post pale mtandao unaporuhusu. Link nyingine itaonekana kama link ya kufungua.
+            </p>
+          </section>
 
           <section className="rounded-2xl border border-dashed border-emerald-300 bg-emerald-50/50 p-3 dark:border-emerald-900 dark:bg-emerald-950/20">
             <div className="flex flex-col gap-3">
@@ -562,7 +606,7 @@ export default function CreatePostButton() {
 
           {error && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">{error}</p>}
         </div>
-        <div className="flex items-center justify-between gap-3 border-t border-emerald-100 bg-white/80 px-4 py-3 dark:border-slate-800 dark:bg-slate-950/80 sm:px-5"><p className="hidden text-xs text-slate-500 sm:block">Andika kwa lugha iliyo wazi ili kila mwanafunzi aelewe.</p><div className="ml-auto flex gap-2"><button type="button" onClick={close} disabled={busy} className="rounded-xl px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-100 disabled:opacity-50 dark:text-slate-300 dark:hover:bg-slate-800">Ghairi</button><button type="button" onClick={() => void submit()} disabled={busy || mergingVideo || content.trim().length < 3} className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-extrabold text-white transition hover:bg-emerald-500 disabled:opacity-50">{busy ? <Loader2 className="h-4 w-4 animate-spin"/> : <Plus className="h-4 w-4"/>}{busy ? 'Inapakia na kuchapisha...' : 'Chapisha post'}</button></div></div>
+        <div className="flex items-center justify-between gap-3 border-t border-emerald-100 bg-white/80 px-4 py-3 dark:border-slate-800 dark:bg-slate-950/80 sm:px-5"><p className="hidden text-xs text-slate-500 sm:block">Andika kwa lugha iliyo wazi ili kila mwanafunzi aelewe.</p><div className="ml-auto flex gap-2"><button type="button" onClick={close} disabled={busy} className="rounded-xl px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-100 disabled:opacity-50 dark:text-slate-300 dark:hover:bg-slate-800">Ghairi</button><button type="button" onClick={() => void submit()} disabled={busy || mergingVideo || (content.trim().length < 3 && !socialLink.trim())} className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-extrabold text-white transition hover:bg-emerald-500 disabled:opacity-50">{busy ? <Loader2 className="h-4 w-4 animate-spin"/> : <Plus className="h-4 w-4"/>}{busy ? 'Inapakia na kuchapisha...' : 'Chapisha post'}</button></div></div>
       </section>
     </div>}
     {cameraOpen && <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-5">
