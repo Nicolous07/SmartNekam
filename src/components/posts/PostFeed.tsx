@@ -16,7 +16,7 @@ function DirectionDivider({ eyebrow, title, subtitle }: { eyebrow: string; title
   return <div className="my-1 rounded-2xl border border-indigo-200/70 bg-gradient-to-r from-indigo-50 via-white to-violet-50 px-3 py-4 dark:border-white/10 dark:from-[#111a2d] dark:via-[#151b2b] dark:to-[#211b3a] sm:px-5"><div className="flex items-center gap-3"><div className="h-px flex-1 bg-gradient-to-r from-transparent via-indigo-400/70 to-violet-500"/><ArrowLeft className="h-4 w-4 shrink-0 rotate-180 text-violet-500"/><span className="text-[10px] font-black uppercase tracking-[.17em] text-indigo-600 dark:text-indigo-300">{eyebrow}</span><ArrowRight className="h-4 w-4 shrink-0 text-violet-500"/><div className="h-px flex-1 bg-gradient-to-r from-violet-500 via-indigo-400/70 to-transparent"/></div><h3 className="mt-2 text-center font-heading text-lg font-black text-slate-950 dark:text-white sm:text-xl">{title}</h3><p className="mt-1 text-center text-xs leading-5 text-slate-500 dark:text-slate-400">{subtitle}</p></div>
 }
 
-function FeatureDiscovery() {
+function FeatureDiscovery({ lowDataMode }: { lowDataMode: boolean }) {
   const features = [
     { href: '/library', title: 'Library', subtitle: 'Notes, vitabu na mitihani', image: '/images/reference-library.webp', iconName: 'library', accent: 'from-indigo-700/90' },
     { href: '/learn', title: 'Learn', subtitle: 'Kozi, AI na quizzes', image: '/images/reference-learn.webp', iconName: 'book', accent: 'from-violet-700/90' },
@@ -31,14 +31,14 @@ function FeatureDiscovery() {
         <span aria-hidden="true" className="shrink-0 text-emerald-600 dark:text-emerald-400">← →</span>
       </div>
       <div className="sn-horizontal-rail -mx-1 flex w-full min-w-0 max-w-full snap-x snap-mandatory flex-nowrap gap-3 overflow-x-auto overscroll-x-contain px-1 pb-3 touch-pan-x" role="region" aria-label="Huduma za SmartNekam zinazoteleza kwa mlalo" tabIndex={0}>
-        {features.map((feature) => <DiscoveryFeatureCard key={feature.href} {...feature} />)}
+        {features.map((feature) => <DiscoveryFeatureCard key={feature.href} {...feature} dataSaver={lowDataMode} />)}
       </div>
     </section>
   )
 }
 
-function PeopleDiscovery({ people }: { people: SuggestedUser[] }) {
-  return <section className="space-y-3"><DirectionDivider eyebrow="SmartNekam People" title="Wanafunzi wa kuungana nao" subtitle="Uliza swali, fungua mjadala au shiriki kitu unachojua. Profile za private hazionyeshwi hapa."/><div className="sn-horizontal-rail flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-1 pb-3 -mx-1 touch-pan-x">{people.map((person) => <article key={person.user_id} className="geometric-card flex min-w-[82%] max-w-[340px] shrink-0 snap-start items-center gap-3 p-3 sm:min-w-[300px]"><span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-xs font-black text-white ring-2 ring-indigo-200 dark:ring-indigo-950">{person.avatar_url ? <img src={person.avatar_url} alt="" className="h-full w-full object-cover"/> : initials(person.full_name || person.username)}</span><div className="min-w-0 flex-1"><p className="truncate text-sm font-extrabold text-slate-950 dark:text-white">{person.full_name || person.username}</p><p className="truncate text-xs text-slate-500 dark:text-slate-400">@{person.username} · {person.role === 'mentor' ? 'Mentor' : person.role === 'teacher' ? 'Mwalimu' : 'Mwanafunzi'}</p><div className="mt-2 flex flex-wrap gap-1.5"><Link href="/communities?tab=qa&create=question" className="inline-flex items-center gap-1 rounded-lg border border-indigo-200 px-2 py-1 text-[10px] font-extrabold text-indigo-700 dark:border-indigo-900 dark:text-indigo-200"><MessageCircle className="h-3 w-3"/>Uliza swali</Link>{person.can_message && <Link href="/communities?tab=chats" className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-[10px] font-extrabold text-slate-600 dark:border-slate-700 dark:text-slate-300">Chat</Link>}</div></div></article>)}{people.length === 0 && <div className="geometric-card p-4 sm:col-span-2"><p className="text-sm text-slate-600 dark:text-slate-300">Bado hakuna profile za kupendekeza kulingana na mipangilio ya faragha.</p></div>}</div><div className="flex justify-end"><OpenPostComposerButton label="Shiriki jambo kwenye Home Feed"/></div></section>
+function PeopleDiscovery({ people, lowDataMode }: { people: SuggestedUser[]; lowDataMode: boolean }) {
+  return <section className="space-y-3"><DirectionDivider eyebrow="SmartNekam People" title="Wanafunzi wa kuungana nao" subtitle="Uliza swali, fungua mjadala au shiriki kitu unachojua. Profile za private hazionyeshwi hapa."/><div className="sn-horizontal-rail flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-1 pb-3 -mx-1 touch-pan-x">{people.map((person) => <article key={person.user_id} className="geometric-card flex min-w-[82%] max-w-[340px] shrink-0 snap-start items-center gap-3 p-3 sm:min-w-[300px]"><span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-xs font-black text-white ring-2 ring-indigo-200 dark:ring-indigo-950">{person.avatar_url && !lowDataMode ? <img src={person.avatar_url} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover"/> : initials(person.full_name || person.username)}</span><div className="min-w-0 flex-1"><p className="truncate text-sm font-extrabold text-slate-950 dark:text-white">{person.full_name || person.username}</p><p className="truncate text-xs text-slate-500 dark:text-slate-400">@{person.username} · {person.role === 'mentor' ? 'Mentor' : person.role === 'teacher' ? 'Mwalimu' : 'Mwanafunzi'}</p><div className="mt-2 flex flex-wrap gap-1.5"><Link href="/communities?tab=qa&create=question" className="inline-flex items-center gap-1 rounded-lg border border-indigo-200 px-2 py-1 text-[10px] font-extrabold text-indigo-700 dark:border-indigo-900 dark:text-indigo-200"><MessageCircle className="h-3 w-3"/>Uliza swali</Link>{person.can_message && <Link href="/communities?tab=chats" className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-[10px] font-extrabold text-slate-600 dark:border-slate-700 dark:text-slate-300">Chat</Link>}</div></div></article>)}{people.length === 0 && <div className="geometric-card p-4 sm:col-span-2"><p className="text-sm text-slate-600 dark:text-slate-300">Bado hakuna profile za kupendekeza kulingana na mipangilio ya faragha.</p></div>}</div><div className="flex justify-end"><OpenPostComposerButton label="Shiriki jambo kwenye Home Feed"/></div></section>
 }
 
 function InstitutionAndGroupsDiscovery({ schools, universities, groups }: { schools: Institution[]; universities: Institution[]; groups: StudyGroup[] }) {
@@ -97,9 +97,9 @@ export default async function PostFeed() {
   const missingModes = DISCOVERY_MODES.filter((mode) => !renderedModes.has(mode))
 
   const renderDiscovery = (mode: DiscoveryMode, index: string) => mode === 'features'
-    ? <FeatureDiscovery key={index} />
+    ? <FeatureDiscovery key={index} lowDataMode={lowDataMode} />
     : mode === 'people'
-      ? <PeopleDiscovery key={index} people={people} />
+      ? <PeopleDiscovery key={index} people={people} lowDataMode={lowDataMode} />
       : <InstitutionAndGroupsDiscovery key={index} schools={schools} universities={universities} groups={groups} />
 
   return <section className="space-y-4">
