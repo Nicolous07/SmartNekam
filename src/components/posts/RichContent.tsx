@@ -175,7 +175,6 @@ export default function RichContent({
             if (embed?.kind === 'file') {
               return (
                 <span className="my-3 block overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 shadow-sm dark:border-slate-800">
-                  <span className="block px-3 py-2.5 text-xs font-extrabold text-white">Video · Cheza ndani ya SmartNekam</span>
                   <video controls playsInline preload="metadata" className="max-h-[38rem] w-full bg-black" src={embed.src}>
                     Kivinjari chako hakiwezi kucheza video hii.
                   </video>
@@ -186,10 +185,6 @@ export default function RichContent({
               const isVertical = embed.platform === 'TikTok' || embed.platform === 'Instagram'
               return (
                 <span className={`my-3 block rounded-2xl border border-slate-200 bg-slate-950 shadow-sm dark:border-slate-800 ${embed.platform === 'TikTok' ? 'overflow-x-auto overflow-y-hidden' : 'overflow-hidden'}`}>
-                  <span className="flex items-center gap-2 px-3 py-2.5 text-xs font-extrabold text-white">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-600"><span aria-hidden="true">▶</span></span>
-                    <span>{embed.platform} · Cheza ndani ya SmartNekam</span>
-                  </span>
                   <span className={`relative mx-auto block w-full bg-black ${isVertical ? `aspect-[9/16] max-h-[38rem] max-w-sm ${embed.platform === 'TikTok' ? 'min-w-[325px]' : ''}` : 'aspect-video min-h-[220px]'}`}>
                     <iframe
                       src={embed.src}
