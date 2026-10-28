@@ -83,8 +83,9 @@ function initials(name: string) {
 }
 
 function Avatar({ name, url, size = 'h-11 w-11' }: { name: string; url: string | null; size?: string }) {
+  const { lowDataMode } = useDataSaver()
   return <span className={`${size} sn-chat-avatar flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-emerald-700 font-extrabold text-white`}>
-    {url ? <img src={url} alt="" className="h-full w-full object-cover" /> : initials(name)}
+    {url && !lowDataMode ? <img src={url} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" /> : initials(name)}
   </span>
 }
 
