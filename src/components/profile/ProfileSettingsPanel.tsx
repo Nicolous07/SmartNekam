@@ -132,8 +132,13 @@ export default function ProfileSettingsPanel({ userId, fullName, username: initi
 
     const { error: prefError } = await supabase.from('user_app_preferences').upsert({ user_id: userId, language_code: language, low_data_mode: lowData }, { onConflict: 'user_id' })
     const { error: privacyError } = await supabase.from('user_privacy_settings').upsert({ user_id: userId, profile_visibility: visibility, show_in_leaderboards: leaderboard }, { onConflict: 'user_id' })
-    if (prefError || privacyError) setError(prefError?.message ?? privacyError?.message ?? 'Mipangilio haijahifadhiwa.')
-    else setMessage('Wasifu na mipangilio vimehifadhiwa.')
+    if (prefError || privacyError) {
+      setError(prefError?.message ?? privacyError?.message ?? 'Mipangilio haijahifadhiwa.')
+    } else {
+      setMessage('Wasifu na mipangilio vimehifadhiwa.')
+      try { window.localStorage.setItem('smartnekam:low-data-mode', String(lowData)) } catch { /* storage may be blocked */ }
+      window.dispatchEvent(new CustomEvent('smartnekam:low-data-mode-change', { detail: { enabled: lowData } }))
+    }
     setBusy(false); router.refresh()
   }
 
