@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { BellRing, PhoneIncoming, PhoneOff } from 'lucide-react'
+import { BellRing, PhoneIncoming, PhoneOff, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 type NoticePayload = {
@@ -154,9 +154,19 @@ export default function NotificationRealtimeBridge() {
                 </button>
               </div>
             ) : (
-              <button type="button" onClick={() => { router.push(href); setNotice(null) }} className="mt-3 inline-flex rounded-lg bg-emerald-600 px-3 py-2 text-xs font-extrabold text-white hover:bg-emerald-700">Fungua taarifa</button>
+              <button type="button" onClick={() => setNotice(null)} className="mt-3 inline-flex rounded-lg border border-slate-200 px-3 py-2 text-xs font-extrabold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">Funga taarifa</button>
             )}
           </div>
+          {!isIncomingCall && (
+            <button
+              type="button"
+              onClick={() => setNotice(null)}
+              aria-label="Funga taarifa"
+              className="-mr-1 -mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </div>
       </div>
       {!isIncomingCall && <div key={notice.id} className="sn-toast-progress" aria-hidden="true" />}
