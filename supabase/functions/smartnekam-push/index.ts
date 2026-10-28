@@ -174,7 +174,7 @@ function targetForNotification(record: NotificationRecord): string {
   }
 
   const href = data.href
-  if (typeof href === 'string' && href.startsWith('/') && !href.startsWith('//') && !/^\\/notifications\\/?(?:\\?|$)/.test(href)) {
+  if (typeof href === 'string' && href.startsWith('/') && !href.startsWith('//') && href !== '/notifications' && !href.startsWith('/notifications?') && !href.startsWith('/notifications/')) {
     return href
   }
 
