@@ -1,4 +1,7 @@
+'use client'
+
 import Image from 'next/image'
+import { useDataSaver } from '@/components/data-saver/DataSaverProvider'
 import { PAGE_IMAGES, type ImageKey } from '@/lib/images'
 
 const TONES = {
@@ -23,17 +26,17 @@ export default function PageHero({
   children?: React.ReactNode
 }) {
   const img = PAGE_IMAGES[imageKey]
+  const { lowDataMode } = useDataSaver()
   return (
     <section className="geometric-hero img-zoom relative min-h-44 rounded-2xl text-white sm:min-h-56">
-      <Image
+      {!lowDataMode && <Image
         src={img.src}
         alt=""
         fill
-        priority
         sizes="(min-width: 1152px) 1152px, 100vw"
         className="anim-ken-burns object-cover"
         style={{ objectPosition: img.position }}
-      />
+      />}
       <div className={`absolute inset-0 bg-gradient-to-r ${TONES[tone]}`} />
       <div className="relative flex min-h-44 flex-col justify-end p-6 sm:min-h-56 sm:p-8">
         <h1 className="anim-fade-up text-2xl font-extrabold sm:text-4xl">{title}</h1>
