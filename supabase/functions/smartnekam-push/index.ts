@@ -56,6 +56,9 @@ Deno.serve(async (req: Request) => {
   if (webhook.type !== 'INSERT' || webhook.table !== 'notifications' || webhook.schema !== 'public' || !record?.id || !record.user_id) {
     return json({ ok: true, skipped: 'Not a notification INSERT event' })
   }
+  if (/umefungua taarifa hii bila kuondoka kwenye ukurasa/i.test(`${record.title} ${record.body}`)) {
+    return json({ ok: true, sent: 0, skipped: 'internal navigation notice' })
+  }
 
   const supabase = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -106,10 +109,7 @@ Deno.serve(async (req: Request) => {
     return json({ error: `VAPID key configuration is invalid: ${error instanceof Error ? error.message : 'key error'}` }, 500)
   }
 
-  const hrefValue = record.data?.href
-  const href = typeof hrefValue === 'string' && hrefValue.startsWith('/') && !hrefValue.startsWith('//')
-    ? hrefValue
-    : '/notifications'
+  const href = targetForNotification(record)
   let sent = 0
   let expired = 0
   const failures: string[] = []
@@ -150,6 +150,55 @@ Deno.serve(async (req: Request) => {
 
   return json({ ok: true, sent, expired, failed: failures.length, failures: failures.slice(0, 3) })
 })
+
+function targetForNotification(record: NotificationRecord): string {
+  const data = record.data ?? {}
+  const conversationId = typeof data.conversation_id === 'string' ? data.conversation_id : ''
+  const postId = typeof data.post_id === 'string' ? data.post_id : ''
+  const questionId = typeof data.question_id === 'string' ? data.question_id : ''
+  const groupId = typeof data.group_id === 'string' ? data.group_id : ''
+  const source = typeof data.source === 'string' ? data.source : ''
+  const status = typeof data.status === 'string' ? data.status : ''
+
+  // IDs identify the actual destination more reliably than a legacy generic notifications URL.
+  if (conversationId) {
+    const params = new URLSearchParams({ tab: 'chats', conversation: conversationId })
+    return `/communities?${params.toString()}`
+  }
+  if (postId) return `/posts/${encodeURIComponent(postId)}`
+  if (questionId) return `/communities/questions/${encodeURIComponent(questionId)}`
+  if (groupId) return '/communities?tab=groups'
+  if (source === 'mentor_request') return '/communities?tab=mentors'
+  if (source === 'mentor_request_response') {
+    return status === 'accepted' ? '/communities?tab=chats' : '/communities?tab=mentors'
+  }
+
+  const href = data.href
+  if (typeof href === 'string' && href.startsWith('/') && !href.startsWith('//') && !/^\\/notifications\\/?(?:\\?|$)/.test(href)) {
+    return href
+  }
+
+  switch (record.notification_type) {
+    case 'chat':
+      return '/communities?tab=chats'
+    case 'mentor':
+      return '/communities?tab=mentors'
+    case 'community':
+      return '/communities'
+    case 'content_review':
+      return '/library'
+    case 'deadline':
+      return '/opportunities'
+    case 'application':
+      return '/applications'
+    case 'achievement':
+    case 'referral':
+    case 'security':
+      return '/profile'
+    default:
+      return '/dashboard'
+  }
+}
 
 function convertVapidKeysToJWK(publicKeyBase64url: string, privateKeyBase64url: string) {
   const publicBytes = base64urlToBytes(publicKeyBase64url)
