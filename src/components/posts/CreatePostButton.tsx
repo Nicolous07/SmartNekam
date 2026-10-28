@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import RichContent from '@/components/posts/RichContent'
+import { mergeVideoFilesInBrowser } from '@/lib/mergeVideos'
 
 type SelectedAttachment = { file: File; previewUrl: string | null }
 type UploadedAttachment = { url: string; name: string; mime_type: string; size_bytes: number }
@@ -25,6 +26,9 @@ const SUBJECTS = [
 const MAX_CHARS = 5000
 const MAX_FILES = 5
 const MAX_FILE_BYTES = 10 * 1024 * 1024
+const MAX_VIDEO_BYTES = 50 * 1024 * 1024
+const MAX_MERGE_SOURCE_BYTES = 150 * 1024 * 1024
+const MAX_MERGE_CLIPS = 5
 const ALLOWED_TYPES = new Set([
   'image/jpeg', 'image/png', 'image/webp', 'image/gif',
   'video/mp4', 'video/webm', 'video/quicktime', 'video/3gpp', 'video/x-m4v',
@@ -47,6 +51,7 @@ export default function CreatePostButton() {
   const fileRef = useRef<HTMLInputElement>(null)
   const cameraPhotoInputRef = useRef<HTMLInputElement>(null)
   const cameraVideoInputRef = useRef<HTMLInputElement>(null)
+  const videoMergeInputRef = useRef<HTMLInputElement>(null)
   const textRef = useRef<HTMLTextAreaElement>(null)
   const attachmentsRef = useRef<SelectedAttachment[]>([])
   const cameraVideoRef = useRef<HTMLVideoElement>(null)
@@ -72,6 +77,8 @@ export default function CreatePostButton() {
   const [cameraNotice, setCameraNotice] = useState('')
   const [recording, setRecording] = useState(false)
   const [recordingSeconds, setRecordingSeconds] = useState(0)
+  const [mergingVideo, setMergingVideo] = useState(false)
+  const [mergeProgress, setMergeProgress] = useState('')
 
   attachmentsRef.current = attachments
   useEffect(() => {
@@ -150,8 +157,11 @@ export default function CreatePostButton() {
       setCameraError(message)
       return false
     }
-    if (file.size > MAX_FILE_BYTES) {
-      const message = `${file.name}: faili lisizidi 10 MB. Rekodi video fupi zaidi au chagua faili dogo.`
+    const maxBytes = file.type.startsWith('video/') ? MAX_VIDEO_BYTES : MAX_FILE_BYTES
+    if (file.size > maxBytes) {
+      const message = file.type.startsWith('video/')
+        ? `${file.name}: video lisizidi 50 MB.`
+        : `${file.name}: faili lisizidi 10 MB.`
       setError(message)
       setCameraError(message)
       return false
@@ -276,8 +286,8 @@ export default function CreatePostButton() {
       recorder.ondataavailable = (event) => {
         if (event.data.size > 0) recordedChunksRef.current.push(event.data)
         const totalBytes = recordedChunksRef.current.reduce((sum, chunk) => sum + chunk.size, 0)
-        if (totalBytes > MAX_FILE_BYTES && recorder.state === 'recording') {
-          setCameraError('Video imefikia kikomo cha 10 MB. Inasimamishwa; ikizidi kikomo utahitaji kurekodi video fupi zaidi.')
+        if (totalBytes > MAX_VIDEO_BYTES && recorder.state === 'recording') {
+          setCameraError('Video imefikia kikomo cha 50 MB. Inasimamishwa; ikizidi kikomo utahitaji kurekodi video fupi zaidi.')
           recorder.stop()
         }
       }
@@ -294,8 +304,8 @@ export default function CreatePostButton() {
           setCameraError('Hakuna video iliyorekodiwa. Jaribu tena.')
           return
         }
-        if (blob.size > MAX_FILE_BYTES) {
-          setCameraError('Video hii imezidi 10 MB. Chagua kurekodi tena kwa muda mfupi zaidi.')
+        if (blob.size > MAX_VIDEO_BYTES) {
+          setCameraError('Video hii imezidi 50 MB. Chagua kurekodi tena kwa muda mfupi zaidi.')
           setCameraNotice('')
           return
         }
@@ -354,6 +364,7 @@ export default function CreatePostButton() {
     if (fileRef.current) fileRef.current.value = ''
     if (cameraPhotoInputRef.current) cameraPhotoInputRef.current.value = ''
     if (cameraVideoInputRef.current) cameraVideoInputRef.current.value = ''
+    if (videoMergeInputRef.current) videoMergeInputRef.current.value = ''
   }
 
   function close() {
@@ -372,8 +383,11 @@ export default function CreatePostButton() {
         setError(`${file.name}: aina hii ya faili hairuhusiwi. Tumia picha, video fupi (MP4/WebM/MOV), PDF, Word, Excel, PowerPoint, TXT au CSV.`)
         continue
       }
-      if (file.size > MAX_FILE_BYTES) {
-        setError(`${file.name}: faili lisizidi 10 MB.`)
+      const maxBytes = file.type.startsWith('video/') ? MAX_VIDEO_BYTES : MAX_FILE_BYTES
+      if (file.size > maxBytes) {
+        setError(file.type.startsWith('video/')
+          ? `${file.name}: video lisizidi 50 MB.`
+          : `${file.name}: faili lisizidi 10 MB.`)
         continue
       }
       if (attachments.length + accepted.length >= MAX_FILES) {
@@ -385,6 +399,51 @@ export default function CreatePostButton() {
     }
     if (accepted.length) setAttachments((current) => [...current, ...accepted].slice(0, MAX_FILES))
     e.target.value = ''
+  }
+
+  async function onPickMergeVideos(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? [])
+    e.target.value = ''
+    if (!files.length) return
+    if (attachmentsRef.current.length >= MAX_FILES) {
+      setError(`Unaweza kuambatisha faili zisizozidi ${MAX_FILES} kwa post moja.`)
+      return
+    }
+    if (files.length < 2) {
+      setError('Chagua angalau video 2 ili ziunganishwe na kuwa video moja.')
+      return
+    }
+    if (files.length > MAX_MERGE_CLIPS) {
+      setError(`Unaweza kuunganisha video zisizozidi ${MAX_MERGE_CLIPS} kwa wakati mmoja.`)
+      return
+    }
+    if (files.some((file) => !file.type.startsWith('video/'))) {
+      setError('Chagua video tu kwenye sehemu ya kuunganisha.')
+      return
+    }
+    const oversized = files.find((file) => file.size > MAX_VIDEO_BYTES)
+    if (oversized) {
+      setError(`${oversized.name}: kila video ya kuanzia isizidi 50 MB.`)
+      return
+    }
+    const totalBytes = files.reduce((sum, file) => sum + file.size, 0)
+    if (totalBytes > MAX_MERGE_SOURCE_BYTES) {
+      setError('Jumla ya klipu za kuanzia izidi 150 MB. Chagua klipu chache au ndogo zaidi.')
+      return
+    }
+
+    setMergingVideo(true)
+    setMergeProgress('Inaandaa klipu…')
+    setError('')
+    try {
+      const mergedFile = await mergeVideoFilesInBrowser(files, setMergeProgress)
+      if (addCapturedFile(mergedFile)) setMergeProgress('Video moja imeongezwa kwenye post.')
+    } catch (mergeFailure) {
+      setError(mergeFailure instanceof Error ? mergeFailure.message : 'Imeshindikana kuunganisha video. Jaribu klipu nyingine.')
+      setMergeProgress('')
+    } finally {
+      setMergingVideo(false)
+    }
   }
 
   function removeAttachment(index: number) {
