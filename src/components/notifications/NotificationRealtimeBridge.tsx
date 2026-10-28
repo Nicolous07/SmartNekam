@@ -22,6 +22,59 @@ type CallActionDetail = {
   callerId?: string
 }
 
+const INTERNAL_NAVIGATION_NOTICE = /umefungua taarifa hii bila kuondoka kwenye ukurasa/i
+
+function isInternalNavigationNotice(notice: NoticePayload) {
+  return INTERNAL_NAVIGATION_NOTICE.test(`${notice.title} ${notice.body}`)
+}
+
+function targetForNotice(notice: NoticePayload) {
+  const data = notice.data ?? {}
+  const conversationId = typeof data.conversation_id === 'string' ? data.conversation_id : ''
+  const postId = typeof data.post_id === 'string' ? data.post_id : ''
+  const questionId = typeof data.question_id === 'string' ? data.question_id : ''
+  const groupId = typeof data.group_id === 'string' ? data.group_id : ''
+  const source = typeof data.source === 'string' ? data.source : ''
+
+  if (conversationId) {
+    const params = new URLSearchParams({ tab: 'chats', conversation: conversationId })
+    return `/communities?${params.toString()}`
+  }
+  if (postId) return `/posts/${encodeURIComponent(postId)}`
+  if (questionId) return `/communities/questions/${encodeURIComponent(questionId)}`
+  if (groupId) return '/communities?tab=groups'
+  if (source === 'mentor_request' || source === 'mentor_request_response') {
+    return notice.notification_type === 'mentor' && /kubaliwa|accepted/i.test(`${notice.title} ${String(data.status ?? '')}`)
+      ? '/communities?tab=chats'
+      : '/communities?tab=mentors'
+  }
+
+  const href = data.href
+  if (typeof href === 'string' && href.startsWith('/') && !href.startsWith('//') && !/^\/notifications\/?(?:\?|$)/.test(href)) {
+    return href
+  }
+
+  switch (notice.notification_type) {
+    case 'chat':
+      return '/communities?tab=chats'
+    case 'mentor':
+      return '/communities?tab=mentors'
+    case 'community':
+      return '/communities'
+    case 'content_review':
+      return '/library'
+    case 'deadline':
+    case 'application':
+      return '/opportunities'
+    case 'achievement':
+    case 'referral':
+    case 'security':
+      return '/profile'
+    default:
+      return '/dashboard'
+  }
+}
+
 export default function NotificationRealtimeBridge() {
   const supabase = useMemo(() => createClient(), [])
   const router = useRouter()
@@ -46,7 +99,7 @@ export default function NotificationRealtimeBridge() {
           filter: `user_id=eq.${user.id}`,
         }, (payload) => {
           const row = payload.new as NoticePayload
-          if (!row.id) return
+          if (!row.id || isInternalNavigationNotice(row)) return
           if (row.notification_type === 'call') {
             const callSignalId = typeof row.data?.call_signal_id === 'string' ? row.data.call_signal_id : ''
             if (callSignalId) {
@@ -101,13 +154,16 @@ export default function NotificationRealtimeBridge() {
 
   if (!notice) return null
   const isIncomingCall = notice.notification_type === 'call'
-  const hrefValue = notice.data?.href
-  const href = typeof hrefValue === 'string' && hrefValue.startsWith('/') && !hrefValue.startsWith('//')
-    ? hrefValue
-    : '/notifications'
+  const href = targetForNotice(notice)
   const conversationId = typeof notice.data?.conversation_id === 'string' ? notice.data.conversation_id : ''
   const callSignalId = typeof notice.data?.call_signal_id === 'string' ? notice.data.call_signal_id : undefined
   const callerId = typeof notice.data?.caller_id === 'string' ? notice.data.caller_id : undefined
+
+  function openNotification() {
+    if (isIncomingCall) return
+    setNotice(null)
+    router.push(href)
+  }
 
   function openCallAction(action: CallAction) {
     if (!conversationId) {
@@ -135,7 +191,18 @@ export default function NotificationRealtimeBridge() {
       role={isIncomingCall ? 'alertdialog' : 'status'}
       aria-label={isIncomingCall ? 'Simu ya sauti inayoingia' : 'Taarifa mpya'}
     >
-      <div className={`overflow-hidden rounded-2xl border bg-white p-3 text-slate-900 shadow-2xl shadow-slate-950/25 dark:bg-slate-950 dark:text-white sm:p-4 ${isIncomingCall ? 'border-emerald-400 ring-2 ring-emerald-300/50 dark:border-emerald-700' : 'border-emerald-200 dark:border-emerald-900'}`}>
+      <div
+        className={`overflow-hidden rounded-2xl border bg-white p-3 text-slate-900 shadow-2xl shadow-slate-950/25 dark:bg-slate-950 dark:text-white sm:p-4 ${isIncomingCall ? 'border-emerald-400 ring-2 ring-emerald-300/50 dark:border-emerald-700' : 'border-emerald-200 cursor-pointer transition hover:shadow-emerald-950/20 dark:border-emerald-900'}`}
+        onClick={isIncomingCall ? undefined : openNotification}
+        onKeyDown={isIncomingCall ? undefined : (event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault()
+            openNotification()
+          }
+        }}
+        role={isIncomingCall ? undefined : 'link'}
+        tabIndex={isIncomingCall ? undefined : 0}
+      >
         <div className="flex items-start gap-3">
           <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${isIncomingCall ? 'animate-pulse bg-lime-100 text-emerald-900 dark:bg-lime-950 dark:text-lime-200' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200'}`}>
             {isIncomingCall ? <PhoneIncoming className="h-5 w-5" /> : <BellRing className="h-5 w-5" />}
@@ -154,13 +221,13 @@ export default function NotificationRealtimeBridge() {
                 </button>
               </div>
             ) : (
-              <button type="button" onClick={() => setNotice(null)} className="mt-3 inline-flex rounded-lg border border-slate-200 px-3 py-2 text-xs font-extrabold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">Funga taarifa</button>
+              <button type="button" onClick={(event) => { event.stopPropagation(); openNotification() }} className="mt-3 inline-flex rounded-lg border border-slate-200 px-3 py-2 text-xs font-extrabold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">Fungua taarifa →</button>
             )}
           </div>
           {!isIncomingCall && (
             <button
               type="button"
-              onClick={() => setNotice(null)}
+              onClick={(event) => { event.stopPropagation(); setNotice(null) }}
               aria-label="Funga taarifa"
               className="-mr-1 -mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
             >
