@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { RefObject } from 'react'
 
 type FeedMediaNode = HTMLVideoElement | HTMLIFrameElement
@@ -119,6 +119,24 @@ function useFeedMediaAutoplay(
   }, [ref, play, pause])
 }
 
+function supportsCanvasPreview(src: string) {
+  try {
+    const url = new URL(src, 'https://smartnekam.vercel.app/')
+    // Supabase Storage and the same-origin app can be read by canvas when CORS permits it.
+    return url.origin === 'https://smartnekam.vercel.app' || url.hostname.endsWith('.supabase.co')
+  } catch {
+    return false
+  }
+}
+
+function usesSupabaseCors(src: string) {
+  try {
+    return new URL(src, 'https://smartnekam.vercel.app/').hostname.endsWith('.supabase.co')
+  } catch {
+    return false
+  }
+}
+
 export function AutoFeedVideo({
   src,
   mimeType,
@@ -135,6 +153,29 @@ export function AutoFeedVideo({
   preload?: 'none' | 'metadata' | 'auto'
 }) {
   const videoRef = useRef<HTMLVideoElement>(null)
+  const previewCaptured = useRef(false)
+  const [previewFrame, setPreviewFrame] = useState<string | null>(null)
+  const canCapturePreview = supportsCanvasPreview(src)
+  const useCors = usesSupabaseCors(src)
+
+  const capturePreviewFrame = useCallback((video: HTMLVideoElement) => {
+    if (previewCaptured.current || !canCapturePreview || !video.videoWidth || !video.videoHeight) return
+    try {
+      // A small thumbnail is enough for the blurred background and costs very little memory.
+      const scale = Math.min(1, 480 / video.videoWidth)
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.max(1, Math.round(video.videoWidth * scale))
+      canvas.height = Math.max(1, Math.round(video.videoHeight * scale))
+      const context = canvas.getContext('2d')
+      if (!context) return
+      context.drawImage(video, 0, 0, canvas.width, canvas.height)
+      const frame = canvas.toDataURL('image/jpeg', 0.68)
+      previewCaptured.current = true
+      setPreviewFrame(frame)
+    } catch {
+      // Cross-origin sources without CORS still play normally; they simply keep the dark background.
+    }
+  }, [canCapturePreview])
 
   const play = useCallback(() => {
     const video = videoRef.current
@@ -158,20 +199,34 @@ export function AutoFeedVideo({
   useFeedMediaAutoplay(videoRef, play, pause)
 
   return (
-    <video
-      ref={videoRef}
-      src={mimeType ? undefined : src}
-      controls={controls}
-      playsInline
-      muted
-      preload={preload}
-      aria-label={ariaLabel}
-      className={className}
-      onPlay={() => videoRef.current && claimFeedMedia(videoRef.current)}
-    >
-      {mimeType && <source src={src} type={mimeType} />}
-      Kivinjari chako hakiwezi kucheza video hii.
-    </video>
+    <div className="relative isolate w-full overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+      {previewFrame && (
+        <img
+          src={previewFrame}
+          alt=""
+          aria-hidden="true"
+          draggable={false}
+          className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover opacity-70 blur-2xl"
+        />
+      )}
+      <video
+        ref={videoRef}
+        src={mimeType ? undefined : src}
+        crossOrigin={useCors ? 'anonymous' : undefined}
+        controls={controls}
+        playsInline
+        muted
+        preload={preload}
+        aria-label={ariaLabel}
+        className={`relative z-10 ${className.replace(/\\bbg-black\\b/g, 'bg-transparent')}`}
+        style={{ backgroundColor: 'transparent' }}
+        onLoadedData={(event) => capturePreviewFrame(event.currentTarget)}
+        onPlay={() => videoRef.current && claimFeedMedia(videoRef.current)}
+      >
+        {mimeType && <source src={src} type={mimeType} />}
+        Kivinjari chako hakiwezi kucheza video hii.
+      </video>
+    </div>
   )
 }
 

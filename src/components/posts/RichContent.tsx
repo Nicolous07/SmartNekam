@@ -183,7 +183,7 @@ export default function RichContent({
             if (embed?.kind === 'file') {
               return (
                 <span className="my-3 block overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 shadow-sm dark:border-slate-800">
-                  <AutoFeedVideo src={embed.src} controls ariaLabel="Video iliyoshirikiwa kwenye SmartNekam" className="max-h-[38rem] w-full bg-black" />
+                  <AutoFeedVideo src={embed.src} controls ariaLabel="Video iliyoshirikiwa kwenye SmartNekam" className="aspect-video max-h-[38rem] w-full bg-transparent object-contain" />
                 </span>
               )
             }
