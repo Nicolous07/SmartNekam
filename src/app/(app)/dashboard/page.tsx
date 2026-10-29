@@ -70,8 +70,8 @@ export default async function DashboardPage() {
   return (
     <div className="stagger grid gap-5 xl:h-[calc(100dvh-4.5rem)] xl:grid-cols-[minmax(0,1fr)_320px] xl:overflow-hidden">
       <div className="min-w-0 space-y-5 xl:h-full xl:overflow-y-auto xl:overscroll-contain xl:pr-2 no-scrollbar">
-        <section className="geometric-hero glow-green relative isolate overflow-hidden rounded-3xl px-5 py-6 text-white sm:px-8 sm:py-8">
-          {!lowDataMode && <Image src="/images/reference-home-feed.webp" alt="Wanafunzi wakijifunza pamoja kwenye maabara ya kompyuta" fill sizes="(max-width: 768px) 100vw, 70vw" className="absolute inset-0 -z-20 object-cover object-center opacity-60" />}
+        <section className="geometric-hero glow-green relative isolate overflow-hidden rounded-3xl px-5 py-6 text-white sm:px-8 sm:py-8" data-low-data-mode={lowDataMode}>
+          {<Image src="/images/reference-home-feed.webp" alt="Wanafunzi wakijifunza pamoja kwenye maabara ya kompyuta" fill sizes="(max-width: 768px) 100vw, 70vw" className="absolute inset-0 -z-20 object-cover object-center opacity-60" />}
           <div className="absolute inset-0 -z-10 bg-gradient-to-br from-[#0B0F1A]/90 via-[#17264D]/75 to-[#302259]/70" />
           <div className="max-w-2xl">
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-100">SmartNekam · Soma. Ungana. Pata Fursa.</p>
