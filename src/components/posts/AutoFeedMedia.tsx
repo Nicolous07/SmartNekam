@@ -218,7 +218,7 @@ export function AutoFeedVideo({
         muted
         preload={preload}
         aria-label={ariaLabel}
-        className={`relative z-10 ${className.replace(/\\bbg-black\\b/g, 'bg-transparent')}`}
+        className={`relative z-10 ${className}`}
         style={{ backgroundColor: 'transparent' }}
         onLoadedData={(event) => capturePreviewFrame(event.currentTarget)}
         onPlay={() => videoRef.current && claimFeedMedia(videoRef.current)}
