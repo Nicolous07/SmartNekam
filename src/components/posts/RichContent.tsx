@@ -179,7 +179,8 @@ export default function RichContent({
           ),
           a: ({ children, href }) => {
             const embed = getSocialVideoEmbed(typeof href === 'string' ? href : undefined)
-            if (embed?.kind === 'file') {              return (
+            if (embed?.kind === 'file') {
+              return (
                 <span className="my-3 block overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 shadow-sm dark:border-slate-800">
                   <video controls playsInline preload="metadata" className="max-h-[38rem] w-full bg-black" src={embed.src}>
                     Kivinjari chako hakiwezi kucheza video hii.
@@ -189,7 +190,8 @@ export default function RichContent({
             }
             if (embed?.kind === 'iframe') {
               const isYouTubeShort = Boolean(embed.isYouTubeShort)
-              const isVertical = isYouTubeShort || embed.platform === 'TikTok' || embed.platform === 'Instagram'              return (
+              const isVertical = isYouTubeShort || embed.platform === 'TikTok' || embed.platform === 'Instagram'
+              return (
                 <span className={`my-3 block rounded-2xl border border-slate-200 bg-slate-950 shadow-sm dark:border-slate-800 ${embed.platform === 'TikTok' ? 'overflow-x-auto overflow-y-hidden' : 'overflow-hidden'}`}>
                   <span className={`relative mx-auto block w-full bg-black ${isYouTubeShort ? 'aspect-[9/16] max-h-[min(78svh,760px)] max-w-md' : isVertical ? `aspect-[9/16] max-h-[38rem] max-w-sm ${embed.platform === 'TikTok' ? 'min-w-[325px]' : ''}` : 'aspect-video min-h-[220px]'}`}>
                     <iframe
