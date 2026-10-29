@@ -185,7 +185,7 @@ export default function RichContent({
           a: ({ children, href }) => {
             const embed = getSocialVideoEmbed(typeof href === 'string' ? href : undefined)
             if (embed?.kind === 'file') {
-              if (lowDataMode && !loadedEmbeds[embed.src]) {
+              if (false && lowDataMode && !loadedEmbeds[embed.src]) {
                 return (
                   <span className="my-3 flex flex-col gap-2 rounded-2xl border border-dashed border-emerald-300 bg-emerald-50/70 p-4 dark:border-emerald-800 dark:bg-emerald-950/20">
                     <span className="text-xs font-bold text-slate-700 dark:text-slate-200">Video imezuiwa kupakiwa ili kuokoa data.</span>
@@ -196,7 +196,7 @@ export default function RichContent({
               }
               return (
                 <span className="my-3 block overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 shadow-sm dark:border-slate-800">
-                  <video controls playsInline preload={lowDataMode ? 'none' : 'metadata'} className="max-h-[38rem] w-full bg-black" src={embed.src}>
+                  <video controls playsInline preload="metadata" className="max-h-[38rem] w-full bg-black" src={embed.src}>
                     Kivinjari chako hakiwezi kucheza video hii.
                   </video>
                 </span>
@@ -205,7 +205,7 @@ export default function RichContent({
             if (embed?.kind === 'iframe') {
               const isYouTubeShort = Boolean(embed.isYouTubeShort)
               const isVertical = isYouTubeShort || embed.platform === 'TikTok' || embed.platform === 'Instagram'
-              if (lowDataMode && !loadedEmbeds[embed.src]) {
+              if (false && lowDataMode && !loadedEmbeds[embed.src]) {
                 return (
                   <span className="my-3 flex flex-col gap-2 rounded-2xl border border-dashed border-emerald-300 bg-emerald-50/70 p-4 dark:border-emerald-800 dark:bg-emerald-950/20">
                     <span className="text-xs font-bold text-slate-700 dark:text-slate-200">Video ya {embed.platform} imefichwa kuokoa data.</span>
