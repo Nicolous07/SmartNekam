@@ -55,7 +55,7 @@ export default function DiscoveryFeatureCard({
       aria-label={`${title}: ${subtitle}`}
       className="group relative isolate block min-h-44 w-[82vw] max-w-[300px] shrink-0 snap-start overflow-hidden rounded-2xl border border-white/10 bg-[#121826] shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-emerald-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 sm:min-h-48 sm:w-[270px]"
     >
-      {!dataSaver && !imageFailed && (
+      {!imageFailed && (
         <Image
           src={imageSrc}
           alt=""
