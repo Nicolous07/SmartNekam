@@ -12,7 +12,6 @@ type DiscoveryFeatureCardProps = {
   image: string
   iconName: 'library' | 'book' | 'users' | 'briefcase'
   accent: string
-  dataSaver?: boolean
 }
 
 const FALLBACK_IMAGE = '/images/hero-desk.jpg'
@@ -35,7 +34,6 @@ export default function DiscoveryFeatureCard({
   image,
   iconName,
   accent,
-  dataSaver = false,
 }: DiscoveryFeatureCardProps) {
   const [imageSrc, setImageSrc] = useState(image)
   const Icon = FEATURE_ICONS[iconName]
