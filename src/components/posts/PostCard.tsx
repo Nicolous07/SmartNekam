@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Heart, MessageCircle, Share2, Send, Loader2, Check, CornerDownRight, X, FileText, FileImage, Download, UserPlus, Pin, Megaphone, ImagePlus, Play } from 'lucide-react'
+import { Heart, MessageCircle, Share2, Send, Loader2, Check, CornerDownRight, X, FileText, FileImage, Download, UserPlus, Pin, Megaphone } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import RichContent from '@/components/posts/RichContent'
 import ImageLightbox from '@/components/ui/ImageLightbox'
@@ -113,8 +113,6 @@ export default function PostCard({
 }) {
   const supabase = useMemo(() => createClient(), [])
   const { lowDataMode } = useDataSaver()
-  const [revealedMedia, setRevealedMedia] = useState<Record<string, boolean>>({})
-  const revealMedia = (key: string) => setRevealedMedia((current) => ({ ...current, [key]: true }))
 
   const isAnon = Boolean(post.is_anonymous)
   const hiddenAuthor = isAnon && !post.author_name && !post.author_username
@@ -363,17 +361,7 @@ export default function PostCard({
             const sizeLabel = typeof attachment.size_bytes === 'number'
               ? `${(attachment.size_bytes / (1024 * 1024)).toFixed(1)} MB`
               : null
-            if (attachment.mime_type?.startsWith('image/')) {
-              if (false && lowDataMode && !revealedMedia[key]) {
-                return (
-                  <button key={key} type="button" onClick={() => revealMedia(key)} className="flex min-h-32 w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-emerald-300 bg-emerald-50/70 p-4 text-center transition hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/40">
-                    <ImagePlus className="h-6 w-6 text-emerald-700 dark:text-emerald-300" />
-                    <span className="text-xs font-extrabold text-slate-900 dark:text-white">Picha imefichwa kuokoa data</span>
-                    <span className="text-[11px] text-slate-600 dark:text-slate-300">Gusa kupakia picha{sizeLabel ? ` · ${sizeLabel}` : ''}</span>
-                  </button>
-                )
-              }
-              return (
+            if (attachment.mime_type?.startsWith('image/')) {              return (
                 <ImageLightbox
                   key={key}
                   src={attachment.url}
@@ -386,17 +374,7 @@ export default function PostCard({
                 </ImageLightbox>
               )
             }
-            if (attachment.mime_type?.startsWith('video/')) {
-              if (false && lowDataMode && !revealedMedia[key]) {
-                return (
-                  <button key={key} type="button" onClick={() => revealMedia(key)} className="flex aspect-video w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-emerald-300 bg-slate-950 p-4 text-center transition hover:bg-slate-900">
-                    <Play className="h-7 w-7 text-emerald-300" />
-                    <span className="text-xs font-extrabold text-white">Video haijapakuliwa</span>
-                    <span className="text-[11px] text-slate-300">Gusa kuonyesha video{sizeLabel ? ` · ${sizeLabel}` : ''}</span>
-                  </button>
-                )
-              }
-              return (
+            if (attachment.mime_type?.startsWith('video/')) {              return (
                 <div key={key} className="min-w-0 overflow-hidden rounded-2xl border border-emerald-100 bg-slate-950 dark:border-slate-800">
                   <video
                     controls
@@ -426,13 +404,7 @@ export default function PostCard({
           })}
         </div>
       ) : post.image_url ? (
-        false ? (
-          <button type="button" onClick={() => revealMedia('main-post-image')} className="mt-3 flex min-h-32 w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-emerald-300 bg-emerald-50/70 p-4 text-center transition hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/40">
-            <ImagePlus className="h-6 w-6 text-emerald-700 dark:text-emerald-300" />
-            <span className="text-xs font-extrabold text-slate-900 dark:text-white">Picha imefichwa kuokoa data</span>
-            <span className="text-[11px] text-slate-600 dark:text-slate-300">Gusa kupakia picha</span>
-          </button>
-        ) : (
+        (
           <ImageLightbox
             src={post.image_url}
             alt="Picha ya post"
