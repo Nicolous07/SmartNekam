@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef } from 'react'
+import type { RefObject } from 'react'
 
 type FeedMediaNode = HTMLVideoElement | HTMLIFrameElement
 type FeedMediaEntry = {
@@ -95,7 +96,7 @@ function retryActiveFeedMedia(node: FeedMediaNode) {
 }
 
 function useFeedMediaAutoplay(
-  ref: React.RefObject<FeedMediaNode | null>,
+  ref: RefObject<FeedMediaNode | null>,
   play: () => void,
   pause: () => void,
 ) {
