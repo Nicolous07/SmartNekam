@@ -86,7 +86,7 @@ function initials(name: string) {
 function Avatar({ name, url, size = 'h-11 w-11' }: { name: string; url: string | null; size?: string }) {
   const { lowDataMode } = useDataSaver()
   return <span className={`${size} sn-chat-avatar flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-emerald-700 font-extrabold text-white`}>
-    {url && !lowDataMode ? <img src={url} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" /> : initials(name)}
+    {url ? <img src={url} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" /> : initials(name)}
   </span>
 }
 
@@ -1180,7 +1180,7 @@ export default function DirectMessages() {
                     const fileUrl = attachmentUrls[message.attachment_path!]
                     const fileName = message.attachment_path!.split('/').pop() ?? 'Kiambatisho'
                     if (message.message_type === 'image') {
-                      if (lowDataMode && !revealedChatMedia[message.id]) {
+                      if (false && lowDataMode && !revealedChatMedia[message.id]) {
                         return <button type="button" onClick={() => setRevealedChatMedia((current) => ({ ...current, [message.id]: true }))} className="mb-2 flex min-h-24 w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-emerald-300 px-4 py-3 text-center text-xs font-bold dark:border-emerald-800"><ImagePlus className="h-5 w-5 text-emerald-600"/>Picha imefichwa kuokoa data — gusa kuiona</button>
                       }
                       return <div className="mb-2"><a href={fileUrl} target="_blank" rel="noreferrer"><img src={fileUrl} alt={`Picha kutoka ${message.sender_name}`} loading="lazy" decoding="async" className="max-h-72 max-w-full rounded-xl object-contain" /></a><a href={fileUrl} download={fileName} className={`mt-1 inline-flex items-center gap-1 text-xs font-bold ${mine ? 'text-white' : 'text-emerald-700 dark:text-emerald-300'}`}><Download className="h-3.5 w-3.5" /> Pakua picha</a></div>
@@ -1192,10 +1192,10 @@ export default function DirectMessages() {
                       return <div className="mb-2 min-w-[220px] max-w-full"><audio controls preload="none" src={fileUrl} className="w-full"/><a href={fileUrl} download={fileName} className={`mt-1 inline-flex items-center gap-1 text-xs font-bold ${mine ? 'text-white' : 'text-emerald-700 dark:text-emerald-300'}`}><Download className="h-3.5 w-3.5" /> Pakua sauti</a></div>
                     }
                     if (message.message_type === 'video') {
-                      if (lowDataMode && !revealedChatMedia[message.id]) {
+                      if (false && lowDataMode && !revealedChatMedia[message.id]) {
                         return <button type="button" onClick={() => setRevealedChatMedia((current) => ({ ...current, [message.id]: true }))} className="mb-2 inline-flex items-center gap-2 rounded-xl border border-dashed border-emerald-300 px-3 py-2 text-xs font-bold dark:border-emerald-800"><Play className="h-4 w-4 text-emerald-600"/>Gusa kupakia video</button>
                       }
-                      return <div className="mb-2 max-w-full"><video controls playsInline preload={lowDataMode ? 'none' : 'metadata'} src={fileUrl} className="max-h-72 max-w-full rounded-xl"/><a href={fileUrl} download={fileName} className={`mt-1 inline-flex items-center gap-1 text-xs font-bold ${mine ? 'text-white' : 'text-emerald-700 dark:text-emerald-300'}`}><Download className="h-3.5 w-3.5" /> Pakua video</a></div>
+                      return <div className="mb-2 max-w-full"><video controls playsInline preload="metadata" src={fileUrl} className="max-h-72 max-w-full rounded-xl"/><a href={fileUrl} download={fileName} className={`mt-1 inline-flex items-center gap-1 text-xs font-bold ${mine ? 'text-white' : 'text-emerald-700 dark:text-emerald-300'}`}><Download className="h-3.5 w-3.5" /> Pakua video</a></div>
                     }
                     return <a href={fileUrl} download={fileName} target="_blank" rel="noreferrer" className={`mb-2 flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold ${mine ? 'border-white/25 bg-emerald-700/40 text-white' : 'border-emerald-100 bg-emerald-50 text-emerald-800 dark:border-slate-700 dark:bg-slate-800 dark:text-emerald-200'}`}><FileAudio className="h-4 w-4 shrink-0" /><span className="min-w-0 flex-1 break-all">{fileName}</span><Download className="h-4 w-4 shrink-0" /></a>
                   })()}
