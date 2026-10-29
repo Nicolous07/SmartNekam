@@ -1,11 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import {  } from 'react'
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkBreaks from 'remark-breaks'
 import { restoreStructure } from '@/lib/postText'
-import { useDataSaver } from '@/components/data-saver/DataSaverProvider'
 
 /**
  * Huonyesha posts kwa maandishi ya kawaida, Markdown na majedwali.
@@ -134,9 +133,6 @@ export default function RichContent({
   text: string
   className?: string
 }) {
-  const { lowDataMode } = useDataSaver()
-  const [loadedEmbeds, setLoadedEmbeds] = useState<Record<string, boolean>>({})
-  const revealEmbed = (src: string) => setLoadedEmbeds((current) => ({ ...current, [src]: true }))
 
   return (
     <div className={`rich-content break-words ${className}`}>
@@ -184,17 +180,7 @@ export default function RichContent({
           ),
           a: ({ children, href }) => {
             const embed = getSocialVideoEmbed(typeof href === 'string' ? href : undefined)
-            if (embed?.kind === 'file') {
-              if (false && lowDataMode && !loadedEmbeds[embed.src]) {
-                return (
-                  <span className="my-3 flex flex-col gap-2 rounded-2xl border border-dashed border-emerald-300 bg-emerald-50/70 p-4 dark:border-emerald-800 dark:bg-emerald-950/20">
-                    <span className="text-xs font-bold text-slate-700 dark:text-slate-200">Video imezuiwa kupakiwa ili kuokoa data.</span>
-                    <button type="button" onClick={() => revealEmbed(embed.src)} className="self-start rounded-xl bg-emerald-600 px-3 py-2 text-xs font-extrabold text-white hover:bg-emerald-700">Gusa kupakia video</button>
-                    <a href={embed.src} target="_blank" rel="noopener noreferrer nofollow" className="text-xs font-semibold text-emerald-700 underline dark:text-emerald-300">Fungua video moja kwa moja</a>
-                  </span>
-                )
-              }
-              return (
+            if (embed?.kind === 'file') {              return (
                 <span className="my-3 block overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 shadow-sm dark:border-slate-800">
                   <video controls playsInline preload="metadata" className="max-h-[38rem] w-full bg-black" src={embed.src}>
                     Kivinjari chako hakiwezi kucheza video hii.
@@ -204,17 +190,7 @@ export default function RichContent({
             }
             if (embed?.kind === 'iframe') {
               const isYouTubeShort = Boolean(embed.isYouTubeShort)
-              const isVertical = isYouTubeShort || embed.platform === 'TikTok' || embed.platform === 'Instagram'
-              if (false && lowDataMode && !loadedEmbeds[embed.src]) {
-                return (
-                  <span className="my-3 flex flex-col gap-2 rounded-2xl border border-dashed border-emerald-300 bg-emerald-50/70 p-4 dark:border-emerald-800 dark:bg-emerald-950/20">
-                    <span className="text-xs font-bold text-slate-700 dark:text-slate-200">Video ya {embed.platform} imefichwa kuokoa data.</span>
-                    <button type="button" onClick={() => revealEmbed(embed.src)} className="self-start rounded-xl bg-emerald-600 px-3 py-2 text-xs font-extrabold text-white hover:bg-emerald-700">Gusa kupakia video</button>
-                    <a href={href} target="_blank" rel="noopener noreferrer nofollow" className="text-xs font-semibold text-emerald-700 underline dark:text-emerald-300">Fungua kwenye {embed.platform}</a>
-                  </span>
-                )
-              }
-              return (
+              const isVertical = isYouTubeShort || embed.platform === 'TikTok' || embed.platform === 'Instagram'              return (
                 <span className={`my-3 block rounded-2xl border border-slate-200 bg-slate-950 shadow-sm dark:border-slate-800 ${embed.platform === 'TikTok' ? 'overflow-x-auto overflow-y-hidden' : 'overflow-hidden'}`}>
                   <span className={`relative mx-auto block w-full bg-black ${isYouTubeShort ? 'aspect-[9/16] max-h-[min(78svh,760px)] max-w-md' : isVertical ? `aspect-[9/16] max-h-[38rem] max-w-sm ${embed.platform === 'TikTok' ? 'min-w-[325px]' : ''}` : 'aspect-video min-h-[220px]'}`}>
                     <iframe
