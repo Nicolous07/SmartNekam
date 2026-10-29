@@ -16,7 +16,7 @@ function DirectionDivider({ eyebrow, title, subtitle }: { eyebrow: string; title
   return <div className="my-1 rounded-2xl border border-indigo-200/70 bg-gradient-to-r from-indigo-50 via-white to-violet-50 px-3 py-4 dark:border-white/10 dark:from-[#111a2d] dark:via-[#151b2b] dark:to-[#211b3a] sm:px-5"><div className="flex items-center gap-3"><div className="h-px flex-1 bg-gradient-to-r from-transparent via-indigo-400/70 to-violet-500"/><ArrowLeft className="h-4 w-4 shrink-0 rotate-180 text-violet-500"/><span className="text-[10px] font-black uppercase tracking-[.17em] text-indigo-600 dark:text-indigo-300">{eyebrow}</span><ArrowRight className="h-4 w-4 shrink-0 text-violet-500"/><div className="h-px flex-1 bg-gradient-to-r from-violet-500 via-indigo-400/70 to-transparent"/></div><h3 className="mt-2 text-center font-heading text-lg font-black text-slate-950 dark:text-white sm:text-xl">{title}</h3><p className="mt-1 text-center text-xs leading-5 text-slate-500 dark:text-slate-400">{subtitle}</p></div>
 }
 
-function FeatureDiscovery({ lowDataMode }: { lowDataMode: boolean }) {
+function FeatureDiscovery() {
   const features = [
     { href: '/library', title: 'Library', subtitle: 'Notes, vitabu na mitihani', image: '/images/reference-library.webp', iconName: 'library', accent: 'from-indigo-700/90' },
     { href: '/learn', title: 'Learn', subtitle: 'Kozi, AI na quizzes', image: '/images/reference-learn.webp', iconName: 'book', accent: 'from-violet-700/90' },
@@ -31,7 +31,7 @@ function FeatureDiscovery({ lowDataMode }: { lowDataMode: boolean }) {
         <span aria-hidden="true" className="shrink-0 text-emerald-600 dark:text-emerald-400">← →</span>
       </div>
       <div className="sn-horizontal-rail -mx-1 flex w-full min-w-0 max-w-full snap-x snap-mandatory flex-nowrap gap-3 overflow-x-auto overscroll-x-contain px-1 pb-3 touch-pan-x" role="region" aria-label="Huduma za SmartNekam zinazoteleza kwa mlalo" tabIndex={0}>
-        {features.map((feature) => <DiscoveryFeatureCard key={feature.href} {...feature} dataSaver={false} />)}
+        {features.map((feature) => <DiscoveryFeatureCard key={feature.href} {...feature} />)}
       </div>
     </section>
   )
@@ -97,7 +97,7 @@ export default async function PostFeed() {
   const missingModes = DISCOVERY_MODES.filter((mode) => !renderedModes.has(mode))
 
   const renderDiscovery = (mode: DiscoveryMode, index: string) => mode === 'features'
-    ? <FeatureDiscovery key={index} lowDataMode={lowDataMode} />
+    ? <FeatureDiscovery key={index} />
     : mode === 'people'
       ? <PeopleDiscovery key={index} people={people} lowDataMode={lowDataMode} />
       : <InstitutionAndGroupsDiscovery key={index} schools={schools} universities={universities} groups={groups} />
