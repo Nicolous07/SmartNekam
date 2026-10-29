@@ -28,8 +28,8 @@ export default function PageHero({
   const img = PAGE_IMAGES[imageKey]
   const { lowDataMode } = useDataSaver()
   return (
-    <section className="geometric-hero img-zoom relative min-h-44 rounded-2xl text-white sm:min-h-56">
-      {!lowDataMode && <Image
+    <section className="geometric-hero img-zoom relative min-h-44 rounded-2xl text-white sm:min-h-56" data-low-data-mode={lowDataMode}>
+      {<Image
         src={img.src}
         alt=""
         fill
