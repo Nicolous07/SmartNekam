@@ -1,10 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import {
-  ArrowLeft, Check, CircleUserRound, Loader2, MessageCircle, MessageSquareText,
-  Search, Send, ShieldCheck, X, Users, Plus, Reply, Pencil, Trash2, Smile, Globe2, UserPlus, Paperclip, Download, FileAudio, Mic, Square, Phone, PhoneOff, PhoneIncoming, Volume2, VolumeX, Settings2, Crown, UserMinus, UserCog, Copy, CheckCircle2, LogOut, ImagePlus, RefreshCw, Play,
-} from 'lucide-react'
+import { ArrowLeft, Check, CircleUserRound, Loader2, MessageCircle, MessageSquareText, Search, Send, ShieldCheck, X, Users, Plus, Reply, Pencil, Trash2, Smile, Globe2, UserPlus, Paperclip, Download, FileAudio, Mic, Square, Phone, PhoneOff, PhoneIncoming, Volume2, VolumeX, Settings2, Crown, UserMinus, UserCog, Copy, CheckCircle2, LogOut, ImagePlus, RefreshCw, Play } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useDataSaver } from '@/components/data-saver/DataSaverProvider'
 import { compressImageForLowData } from '@/lib/compressImageForLowData'
@@ -1180,9 +1177,6 @@ export default function DirectMessages() {
                     const fileUrl = attachmentUrls[message.attachment_path!]
                     const fileName = message.attachment_path!.split('/').pop() ?? 'Kiambatisho'
                     if (message.message_type === 'image') {
-                      if (false && lowDataMode && !revealedChatMedia[message.id]) {
-                        return <button type="button" onClick={() => setRevealedChatMedia((current) => ({ ...current, [message.id]: true }))} className="mb-2 flex min-h-24 w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-emerald-300 px-4 py-3 text-center text-xs font-bold dark:border-emerald-800"><ImagePlus className="h-5 w-5 text-emerald-600"/>Picha imefichwa kuokoa data — gusa kuiona</button>
-                      }
                       return <div className="mb-2"><a href={fileUrl} target="_blank" rel="noreferrer"><img src={fileUrl} alt={`Picha kutoka ${message.sender_name}`} loading="lazy" decoding="async" className="max-h-72 max-w-full rounded-xl object-contain" /></a><a href={fileUrl} download={fileName} className={`mt-1 inline-flex items-center gap-1 text-xs font-bold ${mine ? 'text-white' : 'text-emerald-700 dark:text-emerald-300'}`}><Download className="h-3.5 w-3.5" /> Pakua picha</a></div>
                     }
                     if (message.message_type === 'audio') {
@@ -1192,9 +1186,6 @@ export default function DirectMessages() {
                       return <div className="mb-2 min-w-[220px] max-w-full"><audio controls preload="none" src={fileUrl} className="w-full"/><a href={fileUrl} download={fileName} className={`mt-1 inline-flex items-center gap-1 text-xs font-bold ${mine ? 'text-white' : 'text-emerald-700 dark:text-emerald-300'}`}><Download className="h-3.5 w-3.5" /> Pakua sauti</a></div>
                     }
                     if (message.message_type === 'video') {
-                      if (false && lowDataMode && !revealedChatMedia[message.id]) {
-                        return <button type="button" onClick={() => setRevealedChatMedia((current) => ({ ...current, [message.id]: true }))} className="mb-2 inline-flex items-center gap-2 rounded-xl border border-dashed border-emerald-300 px-3 py-2 text-xs font-bold dark:border-emerald-800"><Play className="h-4 w-4 text-emerald-600"/>Gusa kupakia video</button>
-                      }
                       return <div className="mb-2 max-w-full"><video controls playsInline preload="metadata" src={fileUrl} className="max-h-72 max-w-full rounded-xl"/><a href={fileUrl} download={fileName} className={`mt-1 inline-flex items-center gap-1 text-xs font-bold ${mine ? 'text-white' : 'text-emerald-700 dark:text-emerald-300'}`}><Download className="h-3.5 w-3.5" /> Pakua video</a></div>
                     }
                     return <a href={fileUrl} download={fileName} target="_blank" rel="noreferrer" className={`mb-2 flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold ${mine ? 'border-white/25 bg-emerald-700/40 text-white' : 'border-emerald-100 bg-emerald-50 text-emerald-800 dark:border-slate-700 dark:bg-slate-800 dark:text-emerald-200'}`}><FileAudio className="h-4 w-4 shrink-0" /><span className="min-w-0 flex-1 break-all">{fileName}</span><Download className="h-4 w-4 shrink-0" /></a>
