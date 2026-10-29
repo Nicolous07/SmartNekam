@@ -84,7 +84,7 @@ function timeAgo(iso: string) {
 function Avatar({ name, url, size = 'h-11 w-11' }: { name: string; url: string | null; size?: string }) {
   const { lowDataMode } = useDataSaver()
   const avatarClass = `${size} flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-emerald-600 text-sm font-bold text-white`
-  if (!url || lowDataMode) {
+  if (!url) {
     return <span className={avatarClass}>{initials(name)}</span>
   }
   return (
@@ -364,7 +364,7 @@ export default function PostCard({
               ? `${(attachment.size_bytes / (1024 * 1024)).toFixed(1)} MB`
               : null
             if (attachment.mime_type?.startsWith('image/')) {
-              if (lowDataMode && !revealedMedia[key]) {
+              if (false && lowDataMode && !revealedMedia[key]) {
                 return (
                   <button key={key} type="button" onClick={() => revealMedia(key)} className="flex min-h-32 w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-emerald-300 bg-emerald-50/70 p-4 text-center transition hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/40">
                     <ImagePlus className="h-6 w-6 text-emerald-700 dark:text-emerald-300" />
@@ -387,7 +387,7 @@ export default function PostCard({
               )
             }
             if (attachment.mime_type?.startsWith('video/')) {
-              if (lowDataMode && !revealedMedia[key]) {
+              if (false && lowDataMode && !revealedMedia[key]) {
                 return (
                   <button key={key} type="button" onClick={() => revealMedia(key)} className="flex aspect-video w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-emerald-300 bg-slate-950 p-4 text-center transition hover:bg-slate-900">
                     <Play className="h-7 w-7 text-emerald-300" />
@@ -401,7 +401,7 @@ export default function PostCard({
                   <video
                     controls
                     playsInline
-                    preload={lowDataMode ? 'none' : 'metadata'}
+                    preload="metadata"
                     aria-label={attachment.name || 'Video fupi ya post'}
                     className="aspect-video max-h-[28rem] w-full bg-black object-contain"
                   >
@@ -426,7 +426,7 @@ export default function PostCard({
           })}
         </div>
       ) : post.image_url ? (
-        lowDataMode && !revealedMedia['main-post-image'] ? (
+        false ? (
           <button type="button" onClick={() => revealMedia('main-post-image')} className="mt-3 flex min-h-32 w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-emerald-300 bg-emerald-50/70 p-4 text-center transition hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/40">
             <ImagePlus className="h-6 w-6 text-emerald-700 dark:text-emerald-300" />
             <span className="text-xs font-extrabold text-slate-900 dark:text-white">Picha imefichwa kuokoa data</span>
