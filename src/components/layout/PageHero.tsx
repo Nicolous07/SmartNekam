@@ -29,14 +29,14 @@ export default function PageHero({
   const { lowDataMode } = useDataSaver()
   return (
     <section className="geometric-hero img-zoom relative min-h-44 rounded-2xl text-white sm:min-h-56" data-low-data-mode={lowDataMode}>
-      {<Image
+      <Image
         src={img.src}
         alt=""
         fill
         sizes="(min-width: 1152px) 1152px, 100vw"
         className="anim-ken-burns object-cover"
         style={{ objectPosition: img.position }}
-      />}
+      />
       <div className={`absolute inset-0 bg-gradient-to-r ${TONES[tone]}`} />
       <div className="relative flex min-h-44 flex-col justify-end p-6 sm:min-h-56 sm:p-8">
         <h1 className="anim-fade-up text-2xl font-extrabold sm:text-4xl">{title}</h1>
