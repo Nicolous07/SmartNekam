@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Heart, MessageCircle, Share2, Send, Loader2, Check, CornerDownRight, X, FileText, FileImage, Download, UserPlus, Pin, Megaphone } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import RichContent from '@/components/posts/RichContent'
+import { AutoFeedVideo } from '@/components/posts/AutoFeedMedia'
 import ImageLightbox from '@/components/ui/ImageLightbox'
 import { useDataSaver } from '@/components/data-saver/DataSaverProvider'
 
@@ -376,16 +377,13 @@ export default function PostCard({
             }
             if (attachment.mime_type?.startsWith('video/')) {              return (
                 <div key={key} className="min-w-0 overflow-hidden rounded-2xl border border-emerald-100 bg-slate-950 dark:border-slate-800">
-                  <video
+                  <AutoFeedVideo
+                    src={attachment.url}
+                    mimeType={attachment.mime_type}
                     controls
-                    playsInline
-                    preload="metadata"
-                    aria-label={attachment.name || 'Video fupi ya post'}
+                    ariaLabel={attachment.name || 'Video fupi ya post'}
                     className="aspect-video max-h-[28rem] w-full bg-black object-contain"
-                  >
-                    <source src={attachment.url} type={attachment.mime_type} />
-                    Kivinjari chako hakiwezi kucheza video hii.
-                  </video>
+                  />
                   <div className="flex items-center justify-between gap-2 px-3 py-2 text-[11px] text-slate-300">
                     <span className="min-w-0 truncate">{attachment.name || 'Video fupi'}</span>
                     {sizeLabel && <span className="shrink-0">{sizeLabel}</span>}

@@ -4,6 +4,7 @@ import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkBreaks from 'remark-breaks'
 import { restoreStructure } from '@/lib/postText'
+import { AutoFeedEmbed, AutoFeedVideo } from '@/components/posts/AutoFeedMedia'
 
 /**
  * Huonyesha posts kwa maandishi ya kawaida, Markdown na majedwali.
@@ -68,7 +69,7 @@ function getSocialVideoEmbed(href: string | undefined): SocialVideoEmbed | null 
   if (/^[A-Za-z0-9_-]{11}$/.test(videoId)) {
     return {
       platform: 'YouTube',
-      src: `https://www.youtube-nocookie.com/embed/${videoId}?controls=1&playsinline=1&rel=0`,
+      src: `https://www.youtube-nocookie.com/embed/${videoId}?controls=1&playsinline=1&rel=0&enablejsapi=1&mute=1`,
       kind: 'iframe',
       isYouTubeShort: host !== 'youtu.be' && first === 'shorts',
     }
@@ -79,7 +80,7 @@ function getSocialVideoEmbed(href: string | undefined): SocialVideoEmbed | null 
     const videoIndex = parts.indexOf('video')
     const tiktokId = videoIndex >= 0 ? parts[videoIndex + 1] ?? '' : ''
     if (/^\d+$/.test(tiktokId)) {
-      return { platform: 'TikTok', src: `https://www.tiktok.com/player/v1/${tiktokId}?autoplay=0&controls=1&play_button=1&progress_bar=1&volume_control=1&fullscreen_button=1&muted=0`, kind: 'iframe' }
+      return { platform: 'TikTok', src: `https://www.tiktok.com/player/v1/${tiktokId}?autoplay=0&controls=1&play_button=1&progress_bar=1&volume_control=1&fullscreen_button=1&muted=1`, kind: 'iframe' }
     }
   }
 
@@ -111,7 +112,7 @@ function getSocialVideoEmbed(href: string | undefined): SocialVideoEmbed | null 
   if (host === 'vimeo.com' || host === 'player.vimeo.com') {
     const vimeoId = host === 'player.vimeo.com' && first === 'video' ? second : first
     if (/^\d+$/.test(vimeoId)) {
-      return { platform: 'Vimeo', src: `https://player.vimeo.com/video/${vimeoId}`, kind: 'iframe' }
+      return { platform: 'Vimeo', src: `https://player.vimeo.com/video/${vimeoId}?api=1&autoplay=0&muted=1`, kind: 'iframe' }
     }
   }
 
@@ -182,9 +183,7 @@ export default function RichContent({
             if (embed?.kind === 'file') {
               return (
                 <span className="my-3 block overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 shadow-sm dark:border-slate-800">
-                  <video controls playsInline preload="metadata" className="max-h-[38rem] w-full bg-black" src={embed.src}>
-                    Kivinjari chako hakiwezi kucheza video hii.
-                  </video>
+                  <AutoFeedVideo src={embed.src} controls ariaLabel="Video iliyoshirikiwa kwenye SmartNekam" className="max-h-[38rem] w-full bg-black" />
                 </span>
               )
             }
@@ -194,14 +193,12 @@ export default function RichContent({
               return (
                 <span className={`my-3 block rounded-2xl border border-slate-200 bg-slate-950 shadow-sm dark:border-slate-800 ${embed.platform === 'TikTok' ? 'overflow-x-auto overflow-y-hidden' : 'overflow-hidden'}`}>
                   <span className={`relative mx-auto block w-full bg-black ${isYouTubeShort ? 'aspect-[9/16] max-h-[min(78svh,760px)] max-w-md' : isVertical ? `aspect-[9/16] max-h-[38rem] max-w-sm ${embed.platform === 'TikTok' ? 'min-w-[325px]' : ''}` : 'aspect-video min-h-[220px]'}`}>
-                    <iframe
+                    <AutoFeedEmbed
                       src={embed.src}
+                      platform={embed.platform}
                       title={`Video ya ${embed.platform} kwenye SmartNekam`}
                       loading="lazy"
-                      className="pointer-events-auto absolute inset-0 block h-full w-full touch-manipulation" style={{ border: 0, pointerEvents: 'auto', touchAction: 'manipulation' }}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; fullscreen; gyroscope; picture-in-picture; web-share"
-                      referrerPolicy="strict-origin-when-cross-origin"
-                      allowFullScreen
+                      className="pointer-events-auto absolute inset-0 block h-full w-full touch-manipulation"
                     />
                   </span>
                   <span className="block px-3 py-2 text-[11px] text-slate-300">
