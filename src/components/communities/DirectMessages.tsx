@@ -1060,6 +1060,13 @@ export default function DirectMessages() {
             {search && <button type="button" aria-label="Futa utafutaji" onClick={() => setSearch('')}><X className="h-4 w-4 text-slate-400" /></button>}
           </label>
           <p className="mt-2 text-[11px] text-slate-400">Andika angalau herufi 2; username inaweza kuanza na @.</p>
+          <div className="mt-3 grid grid-cols-3 gap-1.5" aria-label="Chuja mazungumzo">
+            {([
+              { id: 'all' as const, label: 'All chats', count: inbox.length },
+              { id: 'groups' as const, label: 'Groups', count: groupInbox.length },
+              { id: 'direct' as const, label: 'Direct', count: personalInbox.length },
+            ]).map((filter) => <button key={filter.id} type="button" onClick={() => setInboxFilter(filter.id)} aria-pressed={inboxFilter === filter.id} className={`rounded-xl px-2 py-2.5 text-[11px] font-extrabold transition ${inboxFilter === filter.id ? 'bg-emerald-600 text-white shadow-sm' : 'border border-emerald-900/60 bg-[#102322] text-slate-300 hover:bg-emerald-950'}`}>{filter.label}<span className="ml-1 opacity-75">{filter.count}</span></button>)}
+          </div>
           <button type="button" onClick={() => setShowGroupTools((value) => !value)} className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-3 py-2.5 text-xs font-extrabold text-white hover:bg-emerald-500"><Users className="h-4 w-4" /> {showGroupTools ? 'Ficha chat groups' : 'Chat Groups · Unda / Jiunge'}</button>
         </div>
 
@@ -1114,9 +1121,6 @@ export default function DirectMessages() {
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
           <div className="flex items-center justify-between px-4 pb-2 pt-3"><div><h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-200">My conversations</h3><p className="mt-0.5 text-[10px] text-slate-500">{filteredInbox.length} conversations</p></div><button type="button" onClick={() => void loadInbox()} className="text-xs font-bold text-emerald-300 dark:text-emerald-300">Refresh</button></div>
-          <div className="grid grid-cols-3 gap-1.5 px-3 pb-3">
-            {([{ id: 'all' as const, label: 'All', count: inbox.length }, { id: 'groups' as const, label: 'Groups', count: groupInbox.length }, { id: 'direct' as const, label: 'Direct', count: personalInbox.length }]).map((filter) => <button key={filter.id} type="button" onClick={() => setInboxFilter(filter.id)} aria-pressed={inboxFilter === filter.id} className={`rounded-xl px-2 py-2 text-[11px] font-extrabold transition ${inboxFilter === filter.id ? 'bg-emerald-600 text-white shadow-sm' : 'border border-emerald-900/60 bg-[#102322] text-slate-300 hover:bg-emerald-950'}`}>{filter.label}<span className="ml-1 opacity-75">{filter.count}</span></button>)}
-          </div>
           {loadingInbox ? <div className="space-y-3 p-4"><div className="shimmer-element h-12 rounded-xl" /><div className="shimmer-element h-12 rounded-xl" /><div className="shimmer-element h-12 rounded-xl" /></div>
             : filteredInbox.length ? filteredInbox.map((item) => <button type="button" key={item.conversation_id} onClick={() => { setSelectedId(item.conversation_id); setNotice('') }} className={`flex w-full items-center gap-3 border-b border-emerald-900/30 px-3 py-3 text-left transition hover:bg-white/5 dark:border-slate-800 dark:hover:bg-slate-900 ${selectedId === item.conversation_id ? 'bg-emerald-950/70 dark:bg-slate-900' : ''}`}>
               <Avatar name={item.other_full_name} url={item.conversation_type === 'group' ? null : item.other_avatar_url} />
