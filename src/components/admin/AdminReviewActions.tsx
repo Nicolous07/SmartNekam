@@ -43,14 +43,22 @@ export function AdminFeedPostActions({ postId, status }: { postId: string; statu
     if (!window.confirm('Una uhakika unataka kuondoa post hii kwenye Home Feed?')) return
     setBusy(true)
     setError('')
-    const { error: updateError } = await supabase
-      .from('posts')
-      .update({ status: 'removed' })
-      .eq('id', postId)
-      .in('status', ['published', 'hidden'])
-    if (updateError) setError(updateError.message)
-    else router.refresh()
-    setBusy(false)
+    try {
+      const { data, error: updateError } = await supabase
+        .from('posts')
+        .update({ status: 'removed' })
+        .eq('id', postId)
+        .in('status', ['published', 'hidden'])
+        .select('id')
+        .maybeSingle()
+      if (updateError) throw updateError
+      if (!data) throw new Error('Post haijaondolewa. Hakikisha una ruhusa ya moderator na post bado ipo kwenye feed.')
+      router.refresh()
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Imeshindikana kuondoa post.')
+    } finally {
+      setBusy(false)
+    }
   }
 
   return (
