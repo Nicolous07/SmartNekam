@@ -374,7 +374,8 @@ export function InstitutionCommunityRoom({ communityId, userId, communityName, i
     setBusyChat(false)
   }
 
-  return <div className="space-y-5">
+  return <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(340px,0.9fr)]">
+    <div className="min-w-0">
     <section className="sn-chat-shell flex h-[70dvh] min-h-[500px] max-h-[820px] flex-col overflow-hidden rounded-[26px] border">
       <header className="sn-chat-topbar flex items-center gap-3 border-b px-4 py-4 text-white sm:px-5">
         <span className="flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-white/10"><Users className="h-5 w-5"/></span>
@@ -401,7 +402,9 @@ export function InstitutionCommunityRoom({ communityId, userId, communityName, i
         <button type="submit" disabled={busyChat || !chatBody.trim()} className="sn-chat-send flex h-11 w-11 shrink-0 items-center justify-center rounded-full disabled:opacity-40">{busyChat?<Loader2 className="h-5 w-5 animate-spin"/>:<Send className="h-5 w-5"/>}</button>
       </form>
     </section>
+    </div>
 
+    <div className="min-w-0 lg:sticky lg:top-4 lg:max-h-[70dvh] lg:overflow-y-auto lg:overscroll-contain lg:rounded-[24px]">
     <section className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-[#111923]">
       <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-4 sm:px-5 dark:border-slate-800">
         <div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300"><MessageCircle className="h-5 w-5"/></span><div><h2 className="font-heading text-base font-extrabold text-slate-950 dark:text-white">Mijadala ya taasisi</h2><p className="text-xs text-slate-500">Maswali, mawazo na taarifa za wanafunzi.</p></div></div>
@@ -426,5 +429,6 @@ export function InstitutionCommunityRoom({ communityId, userId, communityName, i
         }) : <div className="px-5 py-9 text-center"><MessageCircle className="mx-auto h-7 w-7 text-slate-400"/><h3 className="mt-3 text-sm font-extrabold text-slate-800 dark:text-slate-100">Bado hakuna mijadala</h3><p className="mt-1 text-xs text-slate-500">Kuwa wa kwanza kushiriki wazo au swali.</p></div>}
       </div>
     </section>
+    </div>
   </div>
 }
