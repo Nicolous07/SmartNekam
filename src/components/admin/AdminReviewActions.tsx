@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Check, Loader2, X } from 'lucide-react'
+import { Check, Loader2, Trash2, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -29,4 +29,37 @@ export function ReviewReportActions({ id }: {id:string}) {
     setBusy(false)
   }
   return <div className="flex flex-wrap gap-2"><button type="button" disabled={busy} onClick={()=>void review('investigating')} className="rounded-lg border border-amber-200 px-3 py-2 text-xs font-bold text-amber-800 disabled:opacity-50 dark:border-amber-900 dark:text-amber-200">Chunguza</button><button type="button" disabled={busy} onClick={()=>void review('resolved')} className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white disabled:opacity-50">Tatuliwa</button><button type="button" disabled={busy} onClick={()=>void review('dismissed')} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300">Dismiss</button>{error&&<p role="alert" className="basis-full text-xs text-red-700">{error}</p>}</div>
+}
+
+
+export function AdminFeedPostActions({ postId, status }: { postId: string; status: string }) {
+  const supabase = createClient()
+  const router = useRouter()
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+
+  async function removePost() {
+    if (busy || status === 'removed') return
+    if (!window.confirm('Una uhakika unataka kuondoa post hii kwenye Home Feed?')) return
+    setBusy(true)
+    setError('')
+    const { error: updateError } = await supabase
+      .from('posts')
+      .update({ status: 'removed' })
+      .eq('id', postId)
+      .in('status', ['published', 'hidden'])
+    if (updateError) setError(updateError.message)
+    else router.refresh()
+    setBusy(false)
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <button type="button" onClick={() => void removePost()} disabled={busy || status === 'removed'} className="inline-flex items-center gap-2 rounded-xl border border-red-200 px-3 py-2 text-xs font-extrabold text-red-700 transition hover:bg-red-50 disabled:opacity-50 dark:border-red-900 dark:text-red-300 dark:hover:bg-red-950/40">
+        {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+        Ondoa post kwenye feed
+      </button>
+      {error && <p role="alert" className="basis-full text-xs text-red-700">{error}</p>}
+    </div>
+  )
 }

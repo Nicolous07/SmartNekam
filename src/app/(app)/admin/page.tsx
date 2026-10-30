@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation'
 import { Activity, AlertTriangle, ArrowRight, BarChart3, BellRing, CalendarCheck, BookOpen, BookMarked, BriefcaseBusiness, Building2, CreditCard, FileText, Flag, GraduationCap, Headset, MessageSquare, ShieldCheck, TrendingUp, Trophy, Users, UserCog, Database, BadgeCheck, LockKeyhole, ReceiptText, Megaphone } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { isStaffUser } from '@/lib/admin'
-import { ReviewContentActions, ReviewReportActions } from '@/components/admin/AdminReviewActions'
+import { AdminFeedPostActions, ReviewContentActions, ReviewReportActions } from '@/components/admin/AdminReviewActions'
 import { AdminNotificationComposer, AdminProfileActions, OpportunityLifecycleActions, ReferralActions, ReviewCourseActions, ReviewFlashcardActions, ReviewMentorActions, SupportTicketActions } from '@/components/admin/AdminOperations'
 import { AccountDataRequestActions, CertificateRevokeAction, CommunityModerationActions, InstitutionCreateForm, OpportunityCreateForm, SchoolAnnouncementForm } from '@/components/admin/AdminAdvancedActions'
 import AdminDailyChallengeComposer from '@/components/admin/AdminDailyChallengeComposer'
@@ -32,6 +32,7 @@ type ReferralRow = {id:string;referrer_id:string;referred_user_id:string;referra
 type SupportRow = {id:string;user_id:string;subject:string;category:string;priority:string;status:string;assigned_to:string|null;created_at:string;updated_at:string}
 type GroupRow = {id:string;name:string;level:string|null;privacy:string;member_count:number;status:string;created_at:string}
 type QuestionRow = {id:string;title:string|null;body:string;status:string;created_at:string;user_id:string}
+type FeedPostRow = {id:string;author_id:string;category:string;subject:string|null;content:string;is_anonymous:boolean;status:string;created_at:string}
 type EventRow = {id:string;title:string;event_type:string;starts_at:string;status:string;created_at:string;venue:string|null}
 type CertificateRow = {id:string;certificate_code:string;recipient_id:string;title:string;certificate_type:string;issuer_name:string;issued_at:string;status:string;revoke_reason:string|null}
 type DataRequestRow = {id:string;user_id:string;request_type:string;reason:string|null;status:string;submitted_at:string;admin_note:string|null}
@@ -96,6 +97,8 @@ export default async function AdminPage({searchParams}:{searchParams:Promise<{se
   let groups:GroupRow[]=[]
   let questions:QuestionRow[]=[]
   let events:EventRow[]=[]
+  let feedPosts:FeedPostRow[]=[]
+  let feedPostAuthors:Record<string,{full_name:string|null;username:string|null}>={}
   let certificates:CertificateRow[]=[]
   let dataRequests:DataRequestRow[]=[]
   let dailyChallenges:ScheduledDailyChallenge[]=[]
@@ -206,12 +209,20 @@ export default async function AdminPage({searchParams}:{searchParams:Promise<{se
     if(tickets.length){const ids=[...new Set(tickets.map(t=>t.user_id))];const {data:ps,error:pe}=await supabase.from('profiles').select('id,full_name,email').in('id',ids);if(pe)errors.push(pe.message);for(const p of (ps??[]) as SimpleUser[])ticketUsers[p.id]=p}
   }
   if(canModerate&&section==='community'){
-    const [g,q,e]=await Promise.all([
+    const [g,q,e,p]=await Promise.all([
       supabase.from('study_groups').select('id,name,level,privacy,member_count,status,created_at').order('created_at',{ascending:false}).limit(100),
       supabase.from('questions').select('id,title,body,status,created_at,user_id').order('created_at',{ascending:false}).limit(100),
-      supabase.from('community_events').select('id,title,event_type,starts_at,status,created_at,venue').order('created_at',{ascending:false}).limit(100)
+      supabase.from('community_events').select('id,title,event_type,starts_at,status,created_at,venue').order('created_at',{ascending:false}).limit(100),
+      supabase.from('posts').select('id,author_id,category,subject,content,is_anonymous,status,created_at').in('status',['published','hidden']).order('created_at',{ascending:false}).limit(100)
     ])
-    groups=(g.data??[]) as GroupRow[];questions=(q.data??[]) as QuestionRow[];events=(e.data??[]) as EventRow[];for(const err of [g.error,q.error,e.error])if(err)errors.push(err.message)
+    groups=(g.data??[]) as GroupRow[];questions=(q.data??[]) as QuestionRow[];events=(e.data??[]) as EventRow[];feedPosts=(p.data??[]) as FeedPostRow[]
+    for(const err of [g.error,q.error,e.error,p.error])if(err)errors.push(err.message)
+    const authorIds=[...new Set(feedPosts.map(post=>post.author_id))]
+    if(authorIds.length){
+      const {data:authors,error:authorError}=await supabase.from('profiles').select('id,full_name,username').in('id',authorIds)
+      if(authorError)errors.push(authorError.message)
+      for(const author of authors??[])feedPostAuthors[author.id]={full_name:author.full_name,username:author.username}
+    }
   }
   if(canModerate&&section==='certificates'){
     const {data,error}=await supabase.from('certificates').select('id,certificate_code,recipient_id,title,certificate_type,issuer_name,issued_at,status,revoke_reason').order('issued_at',{ascending:false}).limit(100)
@@ -252,7 +263,40 @@ export default async function AdminPage({searchParams}:{searchParams:Promise<{se
     {section==='promotions'&&<section className="space-y-4"><SectionHeader title="Feed Promotions" description="Weka post muhimu juu ya feed, au dhibiti matangazo ya taasisi/chuo ambayo malipo yake yamethibitishwa."/><AdminPostPromotionManager/></section>}
     {section==='daily-challenge'&&<section className="space-y-5"><SectionHeader title="Daily Challenge Manager" description="Tengeneza changamoto ya siku, chapisha na itume kwa watumiaji. Ni moderator au super admin active pekee anayeruhusiwa."/><AdminDailyChallengeComposer/><div className="space-y-3"><div><h3 className="font-extrabold text-slate-950 dark:text-white">Daily Challenges zilizopangwa ({dailyChallenges.length})</h3><p className="mt-1 text-sm text-slate-500">Changamoto ya leo na ratiba zijazo zinaonekana kwanza; rekodi za karibuni zinafuata.</p></div>{dailyChallenges.length?dailyChallenges.map(row=>{const quiz=dailyQuizDetails[row.quiz_id];const today=new Intl.DateTimeFormat('en',{timeZone:'Africa/Dar_es_Salaam',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()).reduce((acc,part)=>({...acc,[part.type]:part.value}),{} as Record<string,string>);const todayText=`${today.year}-${today.month}-${today.day}`;const label=row.challenge_date===todayText?'Leo':row.challenge_date>todayText?'Inakuja':'Imepita';return <article key={row.challenge_date} className="geometric-card flex flex-col gap-3 p-4 sm:flex-row sm:items-center"><span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${label==='Leo'?'bg-emerald-100 text-emerald-800':label==='Inakuja'?'bg-sky-100 text-sky-800':'bg-slate-100 text-slate-500'} dark:bg-slate-800`}><CalendarCheck className="h-5 w-5"/></span><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><h4 className="font-extrabold text-slate-950 dark:text-white">{quiz?.title||`Daily Challenge ${row.quiz_id.slice(0,8)}`}</h4><span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-extrabold dark:bg-slate-800">{label}</span></div><p className="mt-1 text-xs text-slate-500">Tarehe: {row.challenge_date} · {quiz?.level?quiz.level.replace('_','-'):'Viwango vyote'} · Dakika {quiz?.duration_minutes??5} · {quiz?.status??'schedule'}</p><p className="mt-1 break-all text-[10px] text-slate-400">Quiz ID: {row.quiz_id}</p></div><Link href="/learn/daily-challenge" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-emerald-200 px-3 py-2 text-xs font-extrabold text-emerald-800 hover:bg-emerald-50 dark:border-emerald-900 dark:text-emerald-200 dark:hover:bg-emerald-950/40">Angalia ukurasa <ArrowRight className="h-3.5 w-3.5"/></Link></article>}):<Empty message="Hakuna Daily Challenge iliyopangwa. Tumia fomu hapo juu kutengeneza changamoto ya kwanza."/>}</div></section>}
 
-    {section==='community'&&<section className="space-y-5"><SectionHeader title="Community & Q&A" description="Moderation ya groups/Q&A huandikwa kwenye audit log. Events hutumia review_community_event RPC."/><div className="space-y-2"><h3 className="font-extrabold">Study groups ({groups.length})</h3>{groups.length?groups.map(g=><article key={g.id} className="geometric-card flex flex-col gap-3 p-4"><div className="flex flex-wrap items-start justify-between gap-2"><div><p className="font-extrabold text-slate-950 dark:text-white">{g.name}</p><p className="mt-1 text-xs text-slate-500">{g.level||'All levels'} · {g.privacy} · {g.member_count} members · {dateLabel(g.created_at)}</p><p className="text-xs text-slate-500">Status: {g.status} · {shortId(g.id)}</p></div></div><CommunityModerationActions itemId={g.id} kind="group" status={g.status}/></article>):<Empty message="Hakuna study group iliyopatikana."/>}</div><div className="space-y-2"><h3 className="font-extrabold">Maswali ya Q&A ({questions.length})</h3>{questions.length?questions.map(q=><article key={q.id} className="geometric-card space-y-3 p-4"><div><p className="font-extrabold text-slate-950 dark:text-white">{q.title||'Swali bila kichwa'}</p><p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-slate-600 dark:text-slate-300">{q.body.length>700?`${q.body.slice(0,700)}…`:q.body}</p><p className="mt-1 text-xs text-slate-500">{q.status} · {dateLabel(q.created_at)} · {shortId(q.user_id)}</p></div><CommunityModerationActions itemId={q.id} kind="question" status={q.status}/></article>):<Empty message="Hakuna swali lililopatikana."/>}</div><div className="space-y-2"><h3 className="font-extrabold">Matukio ya jumuiya ({events.length})</h3>{events.length?events.map(e=><article key={e.id} className="geometric-card flex flex-col gap-3 p-4 sm:flex-row sm:items-center"><div className="min-w-0 flex-1"><p className="font-extrabold text-slate-950 dark:text-white">{e.title}</p><p className="mt-1 text-xs text-slate-500">{e.event_type} · {e.status} · {dateLabel(e.starts_at)} · {e.venue||'Venue haijawekwa'}</p></div><CommunityModerationActions itemId={e.id} kind="event" status={e.status}/></article>):<Empty message="Hakuna event iliyopatikana."/>}</div></section>}
+    {section==='community'&&<section className="space-y-5">
+      <SectionHeader title="Community & Q&A" description="Kagua vikundi, maswali na posts za feed. Jina halisi la mwandishi asiyejulikana linaonekana hapa kwa wasimamizi pekee."/>
+      <div className="space-y-2">
+        <h3 className="font-extrabold">Study groups ({groups.length})</h3>
+        {groups.length?groups.map(g=><article key={g.id} className="geometric-card flex flex-col gap-3 p-4"><div className="flex flex-wrap items-start justify-between gap-2"><div><p className="font-extrabold text-slate-950 dark:text-white">{g.name}</p><p className="mt-1 text-xs text-slate-500">{g.level||'All levels'} · {g.privacy} · {g.member_count} members · {dateLabel(g.created_at)}</p><p className="text-xs text-slate-500">Status: {g.status} · {shortId(g.id)}</p></div></div><CommunityModerationActions itemId={g.id} kind="group" status={g.status}/></article>):<Empty message="Hakuna study group iliyopatikana."/>}
+      </div>
+      <div className="space-y-2">
+        <h3 className="font-extrabold">Maswali ya Q&A ({questions.length})</h3>
+        {questions.length?questions.map(q=><article key={q.id} className="geometric-card space-y-3 p-4"><div><p className="font-extrabold text-slate-950 dark:text-white">{q.title||'Swali bila kichwa'}</p><p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-slate-600 dark:text-slate-300">{q.body.length>700?q.body.slice(0,700)+'…':q.body}</p><p className="mt-1 text-xs text-slate-500">{q.status} · {dateLabel(q.created_at)} · Mwandishi ID: {shortId(q.user_id)}</p></div><CommunityModerationActions itemId={q.id} kind="question" status={q.status}/></article>):<Empty message="Hakuna swali lililopatikana."/>}
+      </div>
+      <div className="space-y-2">
+        <div><h3 className="font-extrabold">Posts za Home Feed ({feedPosts.length})</h3><p className="text-xs text-slate-500">Posts zilizochapishwa au zilizofichwa. Mwandishi wa anonymous anaonekana hapa kwa Admin tu.</p></div>
+        {feedPosts.length?feedPosts.map(post=>{
+          const author=feedPostAuthors[post.author_id]
+          const realName=author?.full_name||(author?.username?'@'+author.username:'Mwandishi hajulikani')
+          return <article key={post.id} className="geometric-card space-y-3 p-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className={'rounded-full px-2.5 py-1 text-[10px] font-extrabold '+(post.is_anonymous?'bg-violet-100 text-violet-800 dark:bg-violet-950 dark:text-violet-200':'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200')}>{post.is_anonymous?'Anonymous kwa umma':'Post ya kawaida'}</span>
+              <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200">{post.category}</span>
+              <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">{post.status}</span>
+              <span className="ml-auto text-[11px] text-slate-400">{dateLabel(post.created_at)}</span>
+            </div>
+            <div className="flex items-center gap-2 rounded-xl bg-slate-50 p-3 dark:bg-slate-900">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-xs font-black text-white">{realName.trim().split(/\s+/).slice(0,2).map(part=>part[0]?.toUpperCase()??'').join('')||'M'}</span>
+              <div className="min-w-0"><p className="text-xs font-extrabold text-slate-900 dark:text-white">{realName}</p><p className="text-[10px] text-slate-500">{post.is_anonymous?'Jina halisi la mwandishi · halionekani kwa umma':'Mwandishi wa post'}</p></div>
+            </div>
+            <p className="whitespace-pre-wrap break-words text-sm leading-6 text-slate-700 dark:text-slate-200">{post.content.length>1200?post.content.slice(0,1200)+'…':post.content}</p>
+            <p className="break-all text-[10px] text-slate-400">Post ID: {post.id} · Author ID: {shortId(post.author_id)}</p>
+            <AdminFeedPostActions postId={post.id} status={post.status}/>
+          </article>
+        }):<Empty message="Hakuna post inayosubiri au iliyofichwa kwenye Home Feed."/>}
+      </div>
+      <div className="space-y-2"><h3 className="font-extrabold">Matukio ya jumuiya ({events.length})</h3>{events.length?events.map(e=><article key={e.id} className="geometric-card flex flex-col gap-3 p-4 sm:flex-row sm:items-center"><div className="min-w-0 flex-1"><p className="font-extrabold text-slate-950 dark:text-white">{e.title}</p><p className="mt-1 text-xs text-slate-500">{e.event_type} · {e.status} · {dateLabel(e.starts_at)} · {e.venue||'Venue haijawekwa'}</p></div><CommunityModerationActions itemId={e.id} kind="event" status={e.status}/></article>):<Empty message="Hakuna event iliyopatikana."/>}</div>
+    </section>}
 
     {section==='mentors'&&<section className="space-y-3"><SectionHeader title="Mentor Management" description="Uamuzi wa review unahifadhi verified/status kwenye mentor profile kupitia review_mentor_profile."/>{mentors.length?mentors.map(m=><article key={m.id} className="geometric-card flex flex-col gap-3 p-4 sm:flex-row sm:items-start"><div className="min-w-0 flex-1"><p className="font-extrabold text-slate-950 dark:text-white">{m.display_name||mentorProfiles[m.user_id]?.full_name||'Mentor'}</p><p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{m.headline||'Hakuna headline'}</p><p className="mt-1 text-xs text-slate-500">{m.subjects?.join(', ')||'Subjects hazijawekwa'} · {m.currency} {Number(m.hourly_rate).toLocaleString('en-US')}/hr · Rating {m.rating_average} ({m.rating_count})</p><p className="mt-1 text-xs text-slate-500">{mentorProfiles[m.user_id]?.email||shortId(m.user_id)} · {m.status} · {m.verified?'verified':'not verified'}</p></div><ReviewMentorActions mentorId={m.id} status={m.status}/></article>):<Empty message="Hakuna mentor profile iliyopatikana."/>}</section>}
 
