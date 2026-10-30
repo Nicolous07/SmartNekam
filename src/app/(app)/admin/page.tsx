@@ -10,6 +10,7 @@ import { AccountDataRequestActions, CertificateRevokeAction, CommunityModeration
 import AdminDailyChallengeComposer from '@/components/admin/AdminDailyChallengeComposer'
 import AdminLearningManager from '@/components/admin/AdminLearningManager'
 import AdminPostPromotionManager from '@/components/admin/AdminPostPromotionManager'
+import AdminAnalyticsCharts, { type DailyAnalyticsRow } from '@/components/admin/AdminAnalyticsCharts'
 
 type Section = 'overview'|'content'|'reports'|'audit'|'users'|'learning'|'promotions'|'daily-challenge'|'community'|'feed'|'opportunities'|'mentors'|'institutions'|'payments'|'notifications'|'growth'|'support'|'certificates'|'security'|'analytics'
 type PendingNote = {id:string;title:string;level:string|null;created_at:string}
@@ -104,6 +105,7 @@ export default async function AdminPage({searchParams}:{searchParams:Promise<{se
   let dataRequests:DataRequestRow[]=[]
   let dailyChallenges:ScheduledDailyChallenge[]=[]
   let dailyQuizDetails:Record<string,DailyQuizAdminRow>={}
+  let dailyAnalytics:DailyAnalyticsRow[]=[]
   let totalUsers=0, totalNotes=0, totalPapers=0, totalTextbooks=0, totalCourses=0, totalQuestions=0, totalOpportunities=0, totalTransactions=0, openReportsCount=0
   let pendingNotesCount=0, pendingPapersCount=0, pendingTextbooksCount=0, pendingOpportunitiesCount=0
 
@@ -122,6 +124,12 @@ export default async function AdminPage({searchParams}:{searchParams:Promise<{se
     const names=['watumiaji','notes','past papers','vitabu','kozi','maswali','fursa','transactions','reports wazi']
     countResults.forEach((result,index)=>{ if(result.error && (index!==7 || isSuperAdmin)) errors.push(`${names[index]}: ${result.error.message}`) })
     totalUsers=countResults[0].count??0;totalNotes=countResults[1].count??0;totalPapers=countResults[2].count??0;totalTextbooks=countResults[3].count??0;totalCourses=countResults[4].count??0;totalQuestions=countResults[5].count??0;totalOpportunities=countResults[6].count??0;totalTransactions=countResults[7].count??0;openReportsCount=countResults[8].count??0
+  }
+
+  if(canModerate && section==='analytics') {
+    const {data,error}=await supabase.rpc('admin_smartnekam_daily_analytics',{p_days:14})
+    dailyAnalytics=(data??[]) as DailyAnalyticsRow[]
+    if(error) errors.push(`analytics trends: ${error.message}`)
   }
 
   if(canModerate && ['overview','content','opportunities'].includes(section)) {
@@ -325,7 +333,7 @@ export default async function AdminPage({searchParams}:{searchParams:Promise<{se
 
     {section==='security'&&<section className="space-y-3"><SectionHeader title="Privacy & Security Requests" description="Vitendo hivi vinarekodi admin note na status. `completed` haifanyi export/deletion yenyewe; staff lazima athibitishe kazi hiyo imekamilika kwenye trusted backend."/>{dataRequests.length?dataRequests.map(r=><article key={r.id} className="geometric-card space-y-3 p-4"><div><p className="font-extrabold text-slate-950 dark:text-white">{r.request_type==='export'?'Data export request':'Account deletion request'}</p><p className="mt-1 text-xs text-slate-500">{r.status} · user {shortId(r.user_id)} · {dateLabel(r.submitted_at)}</p><p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{r.reason||'Hakuna sababu iliyotolewa.'}</p>{r.admin_note&&<p className="mt-1 text-xs text-slate-500">Admin note: {r.admin_note}</p>}</div><AccountDataRequestActions requestId={r.id}/></article>):<Empty message="Hakuna ombi la data linalosubiri review."/>}</section>}
 
-    {section==='analytics'&&<section className="space-y-4"><SectionHeader title="Analytics Overview" description="Hizi ni counts za rekodi ambazo Supabase imerudisha kwa COUNT exact queries; si unique active users/DAU/MAU bila event tracking."/><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{cards.filter(card=>isSuperAdmin||card[2]!=='payments').map(([label,value,href,icon])=><StatCard key={label} label={label} value={value} href={`/admin?section=${href}`} icon={icon}/>)}</div><div className="geometric-card p-4"><h3 className="font-extrabold text-slate-950 dark:text-white">Maana ya hizi metrics</h3><p className="mt-1 text-sm leading-6 text-slate-500 dark:text-slate-400">Total users ni idadi ya profiles; notes, past papers, courses, questions, opportunities na payment transactions ni counts za jedwali husika. Hizi hazimaanishi watu active siku ya leo wala revenue iliyothibitishwa kwa provider.</p></div></section>}
+    {section==='analytics'&&<section className="space-y-4"><SectionHeader title="Analytics Overview" description="Mwenendo wa siku 14 wa usajili, ukuaji wa vikundi, maswali na ujumbe wa group. Takwimu ni za jumla; hazionyeshi maudhui ya ujumbe wala kutambua mtu binafsi."/><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{cards.filter(card=>isSuperAdmin||card[2]!=='payments').map(([label,value,href,icon])=><StatCard key={label} label={label} value={value} href={`/admin?section=${href}`} icon={icon}/>)}</div><AdminAnalyticsCharts initialData={dailyAnalytics}/><div className="geometric-card p-4"><h3 className="font-extrabold text-slate-950 dark:text-white">Maana ya hizi metrics</h3><p className="mt-1 text-sm leading-6 text-slate-500 dark:text-slate-400">Total users ni idadi ya profiles. Graphs zinaonyesha rekodi mpya kwa siku na jumla ya messages za group; si unique active users/DAU/MAU. Hizi hazionyeshi mazungumzo binafsi wala kuthibitisha revenue kutoka kwa payment provider.</p></div></section>}
 
     {section==='audit'&&<section className="space-y-3"><SectionHeader title="Audit log" description="Historia ya matendo ya admin yaliyorekodiwa na SQL functions. RPC zisizoandika audit zitaonekana kama hazina event hadi log ziongezwe."/>{audits.length?<div className="geometric-card divide-y divide-slate-100 dark:divide-slate-800">{audits.map(a=><div key={a.id} className="p-4"><p className="font-bold text-slate-900 dark:text-white">{a.action_name} · {a.entity_type}</p><p className="mt-1 text-xs text-slate-500">{dateLabel(a.created_at)} · {shortId(a.id)}</p><pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-words text-xs text-slate-500">{JSON.stringify(a.details,null,2)}</pre></div>)}</div>:<Empty message="Hakuna audit events katika rekodi zilizorudishwa."/>}</section>}
 
