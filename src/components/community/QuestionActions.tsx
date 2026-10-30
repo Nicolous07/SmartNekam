@@ -12,6 +12,8 @@ type Answer = {
   upvotes: number
   is_best_answer: boolean
   created_at: string
+  author_name?: string | null
+  author_username?: string | null
 }
 
 type Props = {
@@ -58,7 +60,13 @@ export default function QuestionActions({
         .eq('question_id', questionId)
         .order('created_at', { ascending: true })
       if (reloadError) throw reloadError
-      setAnswers((data ?? []) as Answer[])
+      const rows=(data??[]) as Answer[]
+      const authorIds=[...new Set(rows.map(answer=>answer.user_id))]
+      const {data:authorProfiles}=authorIds.length
+        ? await supabase.from('profiles').select('id,full_name,username').in('id',authorIds)
+        : {data:[]}
+      const authorMap=new Map((authorProfiles??[]).map(profile=>[profile.id,profile]))
+      setAnswers(rows.map(answer=>({...answer,author_name:authorMap.get(answer.user_id)?.full_name??null,author_username:authorMap.get(answer.user_id)?.username??null})))
       router.refresh()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Imeshindikana kuongeza jibu.')
@@ -127,7 +135,7 @@ export default function QuestionActions({
                 <div className="min-w-0 flex-1">
                   <p className="whitespace-pre-wrap text-sm leading-6 text-slate-700 dark:text-slate-200">{answer.body}</p>
                   <p className="mt-2 text-[11px] text-slate-400">
-                    {answer.user_id === currentUserId ? 'Wewe' : 'Mwanafunzi'} · {new Date(answer.created_at).toLocaleString('sw-TZ')}
+                    {answer.user_id === currentUserId ? 'Wewe' : (answer.author_name || (answer.author_username ? '@' + answer.author_username : 'Mwanafunzi'))} · {new Date(answer.created_at).toLocaleString('sw-TZ')}
                   </p>
                   {answer.is_best_answer && (
                     <span className="mt-2 inline-flex rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-extrabold text-emerald-800 dark:bg-emerald-900 dark:text-emerald-100">

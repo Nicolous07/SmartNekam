@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { Bell, BellRing, CalendarClock, CheckCircle2, Info, PhoneIncoming, ShieldCheck, Sparkles } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import MarkNotificationReadButton from '@/components/learning/MarkNotificationReadButton'
+import NotificationOpenLink from '@/components/notifications/NotificationOpenLink'
 import PushNotificationSetup from '@/components/notifications/PushNotificationSetup'
 
 type Notice = {
@@ -128,9 +129,11 @@ export default async function NotificationsPage() {
 
           return (
             <article key={row.id} className={`geometric-card flex items-start gap-3 p-4 ${row.is_read ? 'opacity-75' : ''}`}>
-              <Link
+              <NotificationOpenLink
+                id={row.id}
                 href={href}
-                aria-label={`Fungua taarifa: ${row.title}`}
+                read={row.is_read}
+                title={row.title}
                 className="flex min-w-0 flex-1 items-start gap-3 rounded-xl outline-none transition hover:bg-emerald-50/50 focus-visible:ring-2 focus-visible:ring-emerald-500 dark:hover:bg-slate-800/50"
               >
                 <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
@@ -155,8 +158,10 @@ export default async function NotificationsPage() {
                   <p className="mt-2 text-xs text-slate-400">{new Date(row.created_at).toLocaleString('sw-TZ', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Africa/Dar_es_Salaam' })}</p>
                   <span className="mt-2 inline-block text-xs font-bold text-emerald-700 dark:text-emerald-300">Gusa kufungua →</span>
                 </div>
-              </Link>
-              {!row.is_read && <MarkNotificationReadButton id={row.id} />}
+              </NotificationOpenLink>
+              {row.is_read
+                ? <span className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-emerald-50 px-2 py-2 text-[10px] font-extrabold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-200"><CheckCircle2 className="h-3.5 w-3.5" /> Imesomwa</span>
+                : <MarkNotificationReadButton id={row.id} />}
             </article>
           )
         })}
