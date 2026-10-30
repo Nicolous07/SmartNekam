@@ -50,9 +50,9 @@ export default async function CommunitiesPage({ searchParams }: { searchParams: 
   const ownQuestionIds = new Set(ownQuestions.map((q) => q.id))
   const communityProfileIds = [...new Set([...questions.map((q) => q.user_id), ...groups.map((g) => g.creator_id)])]
   const { data: communityProfiles } = communityProfileIds.length
-    ? await supabase.from('profiles').select('id,full_name,username').in('id', communityProfileIds)
+    ? await supabase.from('community_profiles').select('id,full_name').in('id', communityProfileIds)
     : { data: [] }
-  const communityProfileMap = new Map((communityProfiles ?? []).map((p) => [p.id, p as { id: string; full_name: string | null; username: string | null }]))
+  const communityProfileMap = new Map((communityProfiles ?? []).map((p) => [p.id, { id: p.id, full_name: p.full_name as string | null, username: null as string | null }]))
   const mentors = (mentorsRes.data ?? []) as { id: string; user_id: string; display_name: string; headline: string | null; bio: string | null; subjects: string[] | null; hourly_rate: number | null; rating_average: number; verified: boolean; status: string }[]
   const events = (eventsRes.data ?? []) as { id: string; title: string; description: string | null; event_type: string; starts_at: string; ends_at: string | null; venue: string | null; registration_url: string | null; status: string }[]
   const lives = (livesRes.data ?? []) as { id: string; title: string; description: string | null; scheduled_start: string; scheduled_end: string; status: string }[]

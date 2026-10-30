@@ -219,9 +219,9 @@ export default async function AdminPage({searchParams}:{searchParams:Promise<{se
     for(const err of [g.error,q.error,e.error,p.error])if(err)errors.push(err.message)
     const authorIds=[...new Set(feedPosts.map(post=>post.author_id))]
     if(authorIds.length){
-      const {data:authors,error:authorError}=await supabase.from('profiles').select('id,full_name,username').in('id',authorIds)
+      const {data:authors,error:authorError}=await supabase.from('community_profiles').select('id,full_name').in('id',authorIds)
       if(authorError)errors.push(authorError.message)
-      for(const author of authors??[])feedPostAuthors[author.id]={full_name:author.full_name,username:author.username}
+      for(const author of authors??[])feedPostAuthors[author.id]={full_name:author.full_name,username:null}
     }
   }
   if(canModerate&&section==='certificates'){

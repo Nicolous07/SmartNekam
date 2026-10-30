@@ -52,9 +52,9 @@ export default async function InstitutionPage({ params, searchParams }: Params) 
   }
   const institutionProfileIds=[...new Set([...questions.map(q=>q.user_id),...groups.map(g=>g.creator_id)])]
   const {data:institutionProfiles}=institutionProfileIds.length
-    ? await supabase.from('profiles').select('id,full_name,username').in('id',institutionProfileIds)
+    ? await supabase.from('community_profiles').select('id,full_name').in('id',institutionProfileIds)
     : {data:[]}
-  const institutionProfileMap=new Map((institutionProfiles??[]).map(p=>[p.id,p as {id:string;full_name:string|null;username:string|null}]))
+  const institutionProfileMap=new Map((institutionProfiles??[]).map(p=>[p.id,{id:p.id,full_name:p.full_name as string|null,username:null as string|null}]))
 
   const subjectMap = new Map(subjects.map((item) => [item.id, item.name]))
   const institutionName = String(institution.name || 'Taasisi')

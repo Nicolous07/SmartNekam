@@ -19,13 +19,13 @@ export default async function QuestionDetailPage({ params }: { params: Promise<{
   ])
   const answerRows = answers ?? []
   const participantIds = [...new Set([question.user_id, ...answerRows.map(answer => answer.user_id)])]
-  const { data: participants } = await supabase.from('profiles').select('id,full_name,username').in('id', participantIds)
+  const { data: participants } = await supabase.from('community_profiles').select('id,full_name').in('id', participantIds)
   const participantMap = new Map((participants ?? []).map(profile => [profile.id, profile]))
   const questionAuthor = participantMap.get(question.user_id)
-  const questionAuthorName = questionAuthor?.full_name || (questionAuthor?.username ? '@' + questionAuthor.username : 'Mwanafunzi')
+  const questionAuthorName = questionAuthor?.full_name || 'Mwanafunzi'
   const answersWithAuthors = answerRows.map(answer => {
     const author = participantMap.get(answer.user_id)
-    return { ...answer, author_name: author?.full_name ?? null, author_username: author?.username ?? null }
+    return { ...answer, author_name: author?.full_name ?? null, author_username: null }
   })
   const attachmentPaths = (question.attachments ?? []) as string[]
   const questionAttachments = await Promise.all(attachmentPaths.map(async path => {

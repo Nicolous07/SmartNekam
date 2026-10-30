@@ -63,10 +63,10 @@ export default function QuestionActions({
       const rows=(data??[]) as Answer[]
       const authorIds=[...new Set(rows.map(answer=>answer.user_id))]
       const {data:authorProfiles}=authorIds.length
-        ? await supabase.from('profiles').select('id,full_name,username').in('id',authorIds)
+        ? await supabase.from('community_profiles').select('id,full_name').in('id',authorIds)
         : {data:[]}
       const authorMap=new Map((authorProfiles??[]).map(profile=>[profile.id,profile]))
-      setAnswers(rows.map(answer=>({...answer,author_name:authorMap.get(answer.user_id)?.full_name??null,author_username:authorMap.get(answer.user_id)?.username??null})))
+      setAnswers(rows.map(answer=>({...answer,author_name:authorMap.get(answer.user_id)?.full_name??null,author_username:null})))
       router.refresh()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Imeshindikana kuongeza jibu.')

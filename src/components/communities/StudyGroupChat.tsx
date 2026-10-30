@@ -15,8 +15,8 @@ function initials(name: string) {
 async function loadIdentities(supabase: ReturnType<typeof createClient>, ids: string[]) {
   const uniqueIds = [...new Set(ids.filter(Boolean))]
   if (!uniqueIds.length) return {} as Record<string, Identity>
-  const { data } = await supabase.from('profiles').select('id,full_name,username').in('id', uniqueIds)
-  return Object.fromEntries((data ?? []).map((profile) => [profile.id, { full_name: profile.full_name as string | null, username: profile.username as string | null }])) as Record<string, Identity>
+  const { data } = await supabase.from('community_profiles').select('id,full_name').in('id', uniqueIds)
+  return Object.fromEntries((data ?? []).map((profile) => [profile.id, { full_name: profile.full_name as string | null, username: null }])) as Record<string, Identity>
 }
 
 function displayName(identity: Identity | undefined, fallback = 'Mwanafunzi') {
@@ -47,7 +47,8 @@ export function GroupPosts({ groupId, initialPosts }: { groupId: string; initial
       const { data, error: insertError } = await supabase.from('group_posts').insert({ group_id: groupId, author_id: user.id, body: body.trim() }).select('id,author_id,body,created_at').single()
       if (insertError) throw insertError
       setPosts((current) => [data as Post, ...current])
-      setAuthors((current) => ({ ...current, ...await loadIdentities(supabase, [user.id]) }))
+      const authorIdentity = await loadIdentities(supabase, [user.id])
+      setAuthors((current) => ({ ...current, ...authorIdentity }))
       setBody(''); setMessage('Post imechapishwa.')
     } catch (submitError) { setError(submitError instanceof Error ? submitError.message : 'Imeshindikana kuchapisha post.') }
     finally { setBusy(false) }
