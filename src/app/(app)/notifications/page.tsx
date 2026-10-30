@@ -17,12 +17,6 @@ type Notice = {
   created_at: string
 }
 
-const INTERNAL_NAVIGATION_NOTICE = /umefungua taarifa hii bila kuondoka kwenye ukurasa/i
-
-function isInternalNavigationNotice(row: Notice) {
-  return INTERNAL_NAVIGATION_NOTICE.test(`${row.title} ${row.body}`)
-}
-
 function targetFor(row: Notice) {
   const data = row.data ?? {}
   const conversationId = typeof data.conversation_id === 'string' ? data.conversation_id : ''
@@ -83,7 +77,7 @@ export default async function NotificationsPage() {
     .order('created_at', { ascending: false })
     .limit(50)
 
-  const rows = ((data ?? []) as Notice[]).filter((row) => !isInternalNavigationNotice(row))
+  const rows = (data ?? []) as Notice[]
   const unread = rows.filter((row) => !row.is_read).length
 
   return <div className="mx-auto max-w-3xl space-y-5">
