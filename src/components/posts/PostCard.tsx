@@ -83,7 +83,6 @@ function timeAgo(iso: string) {
 }
 
 function Avatar({ name, url, size = 'h-11 w-11' }: { name: string; url: string | null; size?: string }) {
-  const { lowDataMode } = useDataSaver()
   const avatarClass = `${size} flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-emerald-600 text-sm font-bold text-white`
   if (!url) {
     return <span className={avatarClass}>{initials(name)}</span>
@@ -96,7 +95,7 @@ function Avatar({ name, url, size = 'h-11 w-11' }: { name: string; url: string |
       className={`${avatarClass} cursor-zoom-in border-0 p-0 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500`}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={url} alt="" className="h-full w-full object-cover" />
+      <img src={url} alt="" loading="lazy" decoding="async" width={44} height={44} className="h-full w-full object-cover" />
     </ImageLightbox>
   )
 }
@@ -370,12 +369,9 @@ export default function PostCard({
                   triggerLabel={`Tazama picha ya post kwa ukubwa kamili: ${attachment.name || 'Picha'}`}
                   className="group relative block w-full overflow-hidden rounded-2xl border border-emerald-100 bg-slate-950 text-left dark:border-slate-800"
                 >
-                  <span className="relative isolate flex min-h-[12rem] w-full items-center justify-center overflow-hidden bg-slate-950">
-                    {/* Background iliyofifishwa inajaza nafasi iliyo pembeni ya picha nyembamba. */}
+                  <span className="relative flex min-h-[12rem] w-full items-center justify-center overflow-hidden bg-slate-950">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={attachment.url} alt="" aria-hidden="true" draggable={false} loading="lazy" decoding="async" className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover opacity-65 blur-2xl" />
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={attachment.url} alt={attachment.name || 'Picha ya post'} loading="lazy" decoding="async" className="relative z-10 max-h-[28rem] w-full object-contain transition duration-300 group-hover:scale-[1.01]" />
+                    <img src={attachment.url} alt={attachment.name || 'Picha ya post'} loading="lazy" decoding="async" className="max-h-[28rem] w-full object-contain transition duration-300 group-hover:scale-[1.01]" />
                   </span>
                 </ImageLightbox>
               )
@@ -414,12 +410,9 @@ export default function PostCard({
             triggerLabel="Tazama picha ya post kwa ukubwa kamili"
             className="mt-3 block w-full cursor-zoom-in overflow-hidden rounded-2xl border-0 bg-slate-950 p-0 text-left"
           >
-            <span className="relative isolate flex min-h-[12rem] w-full items-center justify-center overflow-hidden bg-slate-950">
-              {/* Picha iliyofifishwa hutumia nafasi iliyobaki bila kukata picha kuu. */}
+            <span className="relative flex min-h-[12rem] w-full items-center justify-center overflow-hidden bg-slate-950">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={post.image_url} alt="" aria-hidden="true" draggable={false} loading="lazy" decoding="async" className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover opacity-65 blur-2xl" />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={post.image_url} alt="Picha ya post" loading="lazy" decoding="async" className="relative z-10 max-h-96 w-full object-contain" />
+              <img src={post.image_url} alt="Picha ya post" loading="lazy" decoding="async" className="max-h-96 w-full object-contain" />
             </span>
           </ImageLightbox>
         )
