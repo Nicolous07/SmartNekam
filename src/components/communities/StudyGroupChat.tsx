@@ -300,3 +300,131 @@ export function StudyGroupChat({ groupId, userId, isMember, groupName, memberCou
     </>}
   </section>
 }
+
+
+type InstitutionPost = { id: string; author_id: string; body: string; created_at: string }
+type InstitutionMessage = { id: string; sender_id: string; body: string; created_at: string }
+
+export function InstitutionCommunityRoom({ communityId, userId, communityName, initialPosts, initialMessages }: {
+  communityId: string; userId: string; communityName: string;
+  initialPosts: InstitutionPost[]; initialMessages: InstitutionMessage[];
+}) {
+  const supabase = useMemo(() => createClient(), [])
+  const [posts, setPosts] = useState(initialPosts)
+  const [messages, setMessages] = useState(initialMessages)
+  const [expanded, setExpanded] = useState<Set<string>>(() => new Set())
+  const [authors, setAuthors] = useState<Record<string, Identity>>({})
+  const [postBody, setPostBody] = useState('')
+  const [chatBody, setChatBody] = useState('')
+  const [busyPost, setBusyPost] = useState(false)
+  const [busyChat, setBusyChat] = useState(false)
+  const [error, setError] = useState('')
+  const bottomRef = useRef<HTMLDivElement>(null)
+
+  const load = useCallback(async () => {
+    const [postResult, messageResult] = await Promise.all([
+      supabase.from('institution_community_posts').select('id,author_id,body,created_at').eq('community_id', communityId).order('created_at', { ascending: false }).limit(50),
+      supabase.from('institution_community_messages').select('id,sender_id,body,created_at').eq('community_id', communityId).order('created_at', { ascending: true }).limit(100),
+    ])
+    if (!postResult.error && postResult.data) setPosts(postResult.data as InstitutionPost[])
+    if (!messageResult.error && messageResult.data) setMessages(messageResult.data as InstitutionMessage[])
+  }, [communityId, supabase])
+
+  useEffect(() => {
+    let active = true
+    void loadIdentities(supabase, [...posts.map(p => p.author_id), ...messages.map(m => m.sender_id)]).then((profiles) => {
+      if (active) setAuthors(profiles)
+    })
+    return () => { active = false }
+  }, [posts, messages, supabase])
+
+  useEffect(() => {
+    const channel = supabase.channel('institution-community-' + communityId)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'institution_community_posts', filter: 'community_id=eq.' + communityId }, () => { void load() })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'institution_community_messages', filter: 'community_id=eq.' + communityId }, () => { void load() })
+      .subscribe()
+    return () => { void supabase.removeChannel(channel) }
+  }, [communityId, load, supabase])
+
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }) }, [messages.length])
+
+  async function submitPost(e: FormEvent) {
+    e.preventDefault()
+    const body = postBody.trim()
+    if (body.length < 2 || busyPost) return
+    setBusyPost(true); setError('')
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user || user.id !== userId) { setError('Session imebadilika. Ingia tena.'); setBusyPost(false); return }
+    const { data, error: insertError } = await supabase.from('institution_community_posts').insert({ community_id: communityId, author_id: user.id, body }).select('id,author_id,body,created_at').single()
+    if (insertError) setError(insertError.message)
+    else { setPosts(current => [data as InstitutionPost, ...current]); setPostBody('') }
+    setBusyPost(false)
+  }
+
+  async function submitChat(e: FormEvent) {
+    e.preventDefault()
+    const body = chatBody.trim()
+    if (!body || busyChat) return
+    setBusyChat(true); setError('')
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user || user.id !== userId) { setError('Session imebadilika. Ingia tena.'); setBusyChat(false); return }
+    const { data, error: insertError } = await supabase.from('institution_community_messages').insert({ community_id: communityId, sender_id: user.id, body }).select('id,sender_id,body,created_at').single()
+    if (insertError) setError(insertError.message)
+    else { setMessages(current => [...current, data as InstitutionMessage]); setChatBody('') }
+    setBusyChat(false)
+  }
+
+  return <div className="space-y-5">
+    <section className="sn-chat-shell flex h-[70dvh] min-h-[500px] max-h-[820px] flex-col overflow-hidden rounded-[26px] border">
+      <header className="sn-chat-topbar flex items-center gap-3 border-b px-4 py-4 text-white sm:px-5">
+        <span className="flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-white/10"><Users className="h-5 w-5"/></span>
+        <div className="min-w-0"><p className="text-[10px] font-extrabold uppercase tracking-[.16em] text-emerald-100">Official School Community</p><h2 className="truncate text-lg font-extrabold">{communityName}</h2><p className="text-xs text-emerald-50/90">Mazungumzo ya wanafunzi wa taasisi hii</p></div>
+      </header>
+      <div className="sn-chat-thread min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-4 sm:px-5">
+        {!messages.length ? <div className="flex h-full min-h-48 flex-col items-center justify-center text-center"><MessageCircle className="h-9 w-9 text-emerald-600"/><h3 className="mt-3 font-extrabold text-slate-900 dark:text-white">Anza mazungumzo</h3><p className="mt-1 text-sm text-slate-500">Shirikiana na wanafunzi wa taasisi yako.</p></div> : messages.map(item => {
+          const mine = item.sender_id === userId
+          const name = mine ? 'Wewe' : displayName(authors[item.sender_id])
+          return <div key={item.id} className={'flex items-end gap-2 ' + (mine ? 'justify-end' : 'justify-start')}>
+            {!mine && <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-[10px] font-black text-white">{initials(name)}</span>}
+            <div className={'max-w-[85%] rounded-[20px] px-3.5 py-2.5 ' + (mine ? 'rounded-br-md bg-emerald-700 text-white' : 'rounded-bl-md border border-slate-200 bg-white text-slate-800 dark:border-slate-700 dark:bg-[#121826] dark:text-slate-100')}>
+              {!mine && <p className="mb-1 text-[11px] font-extrabold text-violet-700 dark:text-violet-300">{name}</p>}
+              <p className="whitespace-pre-wrap break-words text-sm leading-5">{item.body}</p>
+              <p className={'mt-1 text-right text-[10px] ' + (mine ? 'text-emerald-100' : 'text-slate-400')}>{timeLabel(item.created_at)}</p>
+            </div>
+          </div>
+        })}
+        <div ref={bottomRef}/>
+      </div>
+      {error && <p role="alert" className="mx-3 mb-2 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:bg-amber-950/40 dark:text-amber-100">{error}</p>}
+      <form onSubmit={submitChat} className="sn-chat-composer flex items-end gap-2 border-t p-3 sm:p-4">
+        <textarea value={chatBody} onChange={e => setChatBody(e.target.value.slice(0,4000))} onKeyDown={e => { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();e.currentTarget.form?.requestSubmit()} }} rows={1} placeholder="Andika ujumbe kwa wanafunzi..." className="sn-chat-composer-input max-h-28 min-h-11 min-w-0 flex-1 resize-y rounded-[22px] border px-4 py-3 text-sm outline-none"/>
+        <button type="submit" disabled={busyChat || !chatBody.trim()} className="sn-chat-send flex h-11 w-11 shrink-0 items-center justify-center rounded-full disabled:opacity-40">{busyChat?<Loader2 className="h-5 w-5 animate-spin"/>:<Send className="h-5 w-5"/>}</button>
+      </form>
+    </section>
+
+    <section className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-[#111923]">
+      <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-4 sm:px-5 dark:border-slate-800">
+        <div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300"><MessageCircle className="h-5 w-5"/></span><div><h2 className="font-heading text-base font-extrabold text-slate-950 dark:text-white">Mijadala ya taasisi</h2><p className="text-xs text-slate-500">Maswali, mawazo na taarifa za wanafunzi.</p></div></div>
+        <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">{posts.length} posts</span>
+      </div>
+      <form onSubmit={submitPost} className="border-b border-slate-100 bg-slate-50/80 p-4 sm:p-5 dark:border-slate-800 dark:bg-[#0d151e]">
+        <textarea value={postBody} onChange={e => setPostBody(e.target.value.slice(0,5000))} rows={2} maxLength={5000} placeholder="Una jambo la kushirikisha wanafunzi? Andika hapa..." className="min-h-[76px] w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm leading-6 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 dark:border-slate-700 dark:bg-[#111923] dark:text-slate-100"/>
+        <div className="mt-2 flex items-center justify-between gap-2"><span className="text-[11px] text-slate-400">{postBody.length}/5,000</span><button type="submit" disabled={busyPost||postBody.trim().length<2} className="inline-flex h-9 items-center gap-2 rounded-xl bg-emerald-600 px-4 text-xs font-extrabold text-white disabled:opacity-50">{busyPost?<Loader2 className="h-4 w-4 animate-spin"/>:<Send className="h-4 w-4"/>}Chapisha post</button></div>
+      </form>
+      <div className="divide-y divide-slate-100 dark:divide-slate-800">
+        {posts.length ? posts.map(post => {
+          const name = displayName(authors[post.author_id])
+          const isExpanded = expanded.has(post.id)
+          const long = post.body.length > 260
+          return <article key={post.id} className="px-4 py-4 sm:px-5">
+            <div className="flex items-start gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-xs font-black text-white">{initials(name)}</span><div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2"><p className="text-sm font-extrabold text-slate-900 dark:text-slate-100">{name}</p><span className="text-slate-300">·</span><time className="text-[11px] text-slate-400">{new Date(post.created_at).toLocaleString('sw-TZ',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</time></div>
+              <p className={'mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-slate-700 dark:text-slate-200 ' + (long&&!isExpanded?'line-clamp-4':'')}>{post.body}</p>
+              {long&&<button type="button" aria-expanded={isExpanded} onClick={()=>setExpanded(old=>{const next=new Set(old);if(next.has(post.id))next.delete(post.id);else next.add(post.id);return next})} className="mt-2 text-xs font-extrabold text-emerald-700 hover:underline dark:text-emerald-300">{isExpanded?'Show less':'Show more'}</button>}
+            </div></div>
+          </article>
+        }) : <div className="px-5 py-9 text-center"><MessageCircle className="mx-auto h-7 w-7 text-slate-400"/><h3 className="mt-3 text-sm font-extrabold text-slate-800 dark:text-slate-100">Bado hakuna mijadala</h3><p className="mt-1 text-xs text-slate-500">Kuwa wa kwanza kushiriki wazo au swali.</p></div>}
+      </div>
+    </section>
+  </div>
+}
