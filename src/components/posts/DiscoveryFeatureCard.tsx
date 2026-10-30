@@ -58,8 +58,7 @@ export default function DiscoveryFeatureCard({
           src={imageSrc}
           alt=""
           fill
-          unoptimized
-          loading="eager"
+          loading="lazy"
           sizes="(max-width: 640px) 82vw, 300px"
           onError={handleImageError}
           className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover transition duration-700 group-hover:scale-105"
