@@ -4,6 +4,7 @@ import { notFound, redirect } from 'next/navigation'
 import { ArrowLeft, BadgeCheck, BookOpen, Building2, CircleHelp, GraduationCap, MapPin, MessageCircle, Users } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import JoinInstitutionCommunityButton from '@/components/institutions/JoinInstitutionCommunityButton'
+import { InstitutionCommunityRoom } from '@/components/communities/StudyGroupChat'
 import { CommunityActions, JoinGroupButton } from '@/components/community/CommunityActions'
 
 type Params = { params: Promise<{ id: string }>; searchParams: Promise<{ kind?: string; create?: string }> }
@@ -32,6 +33,17 @@ export default async function InstitutionPage({ params, searchParams }: Params) 
   if (community) {
     const { data: membership } = await supabase.from('institution_community_members').select('member_role').eq('community_id', community.id).eq('user_id', user.id).maybeSingle()
     alreadyJoined = Boolean(membership)
+  }
+
+  let initialCommunityPosts: {id:string;author_id:string;body:string;created_at:string}[] = []
+  let initialCommunityMessages: {id:string;sender_id:string;body:string;created_at:string}[] = []
+  if (community && hasInstitutionMatch && alreadyJoined) {
+    const [postsResult, messagesResult] = await Promise.all([
+      supabase.from('institution_community_posts').select('id,author_id,body,created_at').eq('community_id', community.id).order('created_at', {ascending:false}).limit(50),
+      supabase.from('institution_community_messages').select('id,sender_id,body,created_at').eq('community_id', community.id).order('created_at', {ascending:true}).limit(100),
+    ])
+    initialCommunityPosts = (postsResult.data ?? []) as typeof initialCommunityPosts
+    initialCommunityMessages = (messagesResult.data ?? []) as typeof initialCommunityMessages
   }
 
   let subjects: Subject[] = []
@@ -73,6 +85,7 @@ export default async function InstitutionPage({ params, searchParams }: Params) 
     </section>
 
     {!hasInstitutionMatch ? <section className="geometric-card p-5 sm:p-6"><div className="flex items-start gap-3"><ShieldCheckSmall /><div><h2 className="font-extrabold text-slate-950 dark:text-white">Eneo hili ni la wanafunzi wa taasisi hii</h2><p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300">Profile yako haijaunganishwa na {institutionName}. Maswali na vikundi vya ndani havitaonyeshwa. Hakikisha umechagua taasisi sahihi kwenye profile yako.</p><Link href="/profile" className="mt-3 inline-flex rounded-xl sn-primary-gradient px-4 py-2.5 text-sm font-extrabold text-white">Angalia profile</Link></div></div></section> : <>
+      {community && alreadyJoined && <InstitutionCommunityRoom communityId={community.id} userId={user.id} communityName={institutionName} initialPosts={initialCommunityPosts} initialMessages={initialCommunityMessages} />}
       <section className="space-y-3"><div><p className="text-xs font-black uppercase tracking-[.16em] text-violet-500">Institution-only</p><h2 className="mt-1 font-heading text-xl font-black text-slate-950 dark:text-white">Maswali na vikundi vya {institutionName}</h2><p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Unachochapisha hapa kitaonekana kwa wanafunzi wenye shule/chuo hiki kwenye profile zao pekee.</p></div><CommunityActions subjects={subjects} initialCreate={sp.create ?? ''} institutionScope={scope} /></section>
       <section className="space-y-3">
         <div className="flex items-end justify-between gap-3"><div><h2 className="font-heading text-lg font-extrabold text-slate-950 dark:text-white">Maswali ya taasisi ({questions.length})</h2><p className="text-xs text-slate-500">Q&amp;A ya ndani; kila swali linaonyesha mwanafunzi aliyeliuliza.</p></div><CircleHelp className="h-5 w-5 text-violet-500"/></div>
