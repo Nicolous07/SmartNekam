@@ -15,7 +15,12 @@ const DataSaverContext = createContext<DataSaverContextValue>({ lowDataMode: fal
 const STORAGE_KEY = 'smartnekam:low-data-mode'
 const CHANGE_EVENT = 'smartnekam:low-data-mode-change'
 
-type SaveDataConnection = EventTarget & { saveData?: boolean }
+type SaveDataConnection = EventTarget & {
+  saveData?: boolean
+  effectiveType?: string
+  rtt?: number
+  downlink?: number
+}
 
 export function DataSaverProvider({ initialLowDataMode, children }: DataSaverProviderProps) {
   const [userEnabled, setUserEnabled] = useState(initialLowDataMode)
@@ -24,7 +29,13 @@ export function DataSaverProvider({ initialLowDataMode, children }: DataSaverPro
   useEffect(() => {
     // The signed-in user's database preference is authoritative on page load.
     const connection = (navigator as Navigator & { connection?: SaveDataConnection }).connection
-    const syncNetworkPreference = () => setNetworkEnabled(Boolean(connection?.saveData))
+    const syncNetworkPreference = () => {
+      const effectiveType = connection?.effectiveType
+      const slowConnection = effectiveType === 'slow-2g' || effectiveType === '2g'
+        || (typeof connection?.downlink === 'number' && connection.downlink > 0 && connection.downlink < 0.75)
+        || (typeof connection?.rtt === 'number' && connection.rtt >= 1200)
+      setNetworkEnabled(Boolean(connection?.saveData || slowConnection))
+    }
     syncNetworkPreference()
     connection?.addEventListener?.('change', syncNetworkPreference)
 
