@@ -85,7 +85,7 @@ export default async function DashboardPage() {
         <section id="home-feed" className="space-y-3">
           <div className="flex items-end justify-between gap-3"><div><p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">SmartNekam Community</p><h2 className="mt-1 font-heading text-xl font-extrabold text-slate-950 dark:text-white sm:text-2xl">Home Feed</h2><p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Shiriki post, like, jibu comments na endeleza threads za mjadala.</p></div><Link href="/communities?tab=chats" aria-label="Chat na wanafunzi" title="Chat na wanafunzi" className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-violet-300/80 bg-white/90 px-2.5 py-2 text-[11px] font-extrabold text-indigo-700 shadow-sm transition hover:bg-violet-50 sm:px-3 sm:text-xs dark:border-violet-400/30 dark:bg-[#182238] dark:text-violet-200 dark:hover:bg-[#202d48]"><Users className="h-4 w-4" /><span className="sm:hidden">Chat</span><span className="hidden sm:inline">Chat na wanafunzi</span></Link></div>
           <PostComposerPrompt displayName={profile.full_name ?? 'Mwanafunzi'} />
-          <PostFeed />
+          <PostFeed lowDataMode={lowDataMode} />
         </section>
 
         <section className="geometric-card overflow-hidden">
