@@ -46,13 +46,9 @@ function InstitutionAndGroupsDiscovery({ schools, universities, groups }: { scho
       <div className="geometric-card min-w-[84%] max-w-[430px] shrink-0 snap-start p-3 sm:p-4"><div className="mb-3 flex items-center gap-2"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300"><Users className="h-4 w-4"/></span><div><h3 className="font-extrabold text-slate-950 dark:text-white">Study groups</h3><p className="text-[10px] text-slate-500">Vikundi vya umma</p></div></div><div className="space-y-2">{groups.map((group) => <Link key={group.id} href="/communities?tab=groups" className="block rounded-xl border border-slate-100 p-3 transition hover:border-violet-300 hover:bg-violet-50/50 dark:border-slate-800 dark:hover:bg-slate-900"><div className="flex items-center gap-2"><span className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-200"><Users className="h-4 w-4"/></span><span className="min-w-0 flex-1"><span className="block truncate text-xs font-extrabold text-slate-900 dark:text-white">{group.name}</span><span className="text-[10px] text-slate-500">{group.member_count} members · {group.level || 'Viwango vyote'}</span></span><ArrowRight className="h-3.5 w-3.5 text-violet-500"/></div>{group.description && <p className="mt-2 line-clamp-2 text-[11px] leading-4 text-slate-500 dark:text-slate-400">{group.description}</p>}</Link>)}{groups.length === 0 && <p className="text-xs text-slate-500">Groups za umma zitaonekana hapa zikishaundwa.</p>}</div><Link href="/communities?tab=groups" className="mt-3 inline-flex items-center gap-1 text-xs font-extrabold text-violet-600 dark:text-violet-300">Tafuta vikundi vyote <ArrowRight className="h-3 w-3"/></Link></div></div></section>
 }
 
-export default async function PostFeed() {
+export default async function PostFeed({ lowDataMode = true }: { lowDataMode?: boolean }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  const { data: appPreferences } = user
-    ? await supabase.from('user_app_preferences').select('low_data_mode').eq('user_id', user.id).maybeSingle()
-    : { data: null }
-  const lowDataMode = appPreferences ? Boolean(appPreferences.low_data_mode) : true
 
   const [feedResult, peopleResult, schoolsResult, universitiesResult, groupsResult, promotionsResult] = await Promise.all([
     supabase.from('posts_feed').select('id, author_id, category, subject, content, image_url, created_at, author_name, author_username, author_avatar, author_role, like_count, comment_count, share_count, liked_by_me, is_anonymous, attachments, author_follower_count, following_author_by_me').order('created_at', { ascending: false }).limit(lowDataMode ? 8 : 20),
