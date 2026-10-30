@@ -129,6 +129,7 @@ export default function DirectMessages() {
   const [myProfile, setMyProfile] = useState<{ full_name: string; avatar_url: string | null }>({ full_name: 'Wewe', avatar_url: null })
   const [inbox, setInbox] = useState<InboxItem[]>([])
   const [search, setSearch] = useState('')
+  const [inboxFilter, setInboxFilter] = useState<'all' | 'groups' | 'direct'>('all')
   const [searchResults, setSearchResults] = useState<SearchUser[]>([])
   const [searching, setSearching] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -1029,6 +1030,10 @@ export default function DirectMessages() {
     else if (selectedId) await loadMessages(selectedId)
   }
 
+  const groupInbox = inbox.filter((item) => item.conversation_type === 'group')
+  const personalInbox = inbox.filter((item) => item.conversation_type !== 'group')
+  const filteredInbox = inboxFilter === 'groups' ? groupInbox : inboxFilter === 'direct' ? personalInbox : inbox
+
   const showingSearch = search.trim().replace(/^@/, '').length >= 2
 
   const chatContainerClass = selectedId
@@ -1097,17 +1102,29 @@ export default function DirectMessages() {
           </div> : <p className="rounded-xl border border-dashed border-emerald-200 bg-white/60 px-3 py-4 text-center text-xs text-slate-500 dark:border-slate-700 dark:bg-black/10">Anza chat mpya kwa kutafuta username hapo juu.</p>}
         </div>}
 
+        {!showGroupTools && !showingSearch && groupInbox.length > 0 && <div className="border-b border-emerald-900/40 bg-[#0d2928] px-3 py-3 dark:bg-[#111923]">
+          <div className="mb-2 flex items-center justify-between"><h3 className="text-[10px] font-black uppercase tracking-[.18em] text-emerald-300">Group conversations</h3><span className="text-[10px] text-slate-400">{groupInbox.length} groups</span></div>
+          <div className="flex snap-x gap-2 overflow-x-auto pb-1">
+            {groupInbox.slice(0, 12).map((item) => <button key={item.conversation_id} type="button" onClick={() => { setSelectedId(item.conversation_id); setNotice('') }} className={`relative flex min-w-[132px] max-w-[148px] snap-start items-center gap-2 rounded-2xl border px-2.5 py-2 text-left transition ${selectedId === item.conversation_id ? 'border-emerald-400 bg-emerald-900/60' : 'border-emerald-900/70 bg-[#102322] hover:bg-emerald-950'}`}>
+              <span className="relative shrink-0"><Avatar name={item.other_full_name} url={item.other_avatar_url} size="h-9 w-9"/>{Number(item.unread_count) > 0 && <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-500 px-1 text-[9px] font-black text-white">{item.unread_count}</span>}</span>
+              <span className="min-w-0"><span className="block truncate text-[11px] font-extrabold text-white">{item.other_full_name}</span><span className="block truncate text-[10px] text-slate-400">{item.last_message || 'Group chat'}</span></span>
+            </button>)}
+          </div>
+        </div>}
+
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-          <div className="flex items-center justify-between px-4 pb-2 pt-3"><h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Chats zako</h3><button type="button" onClick={() => void loadInbox()} className="text-xs font-bold text-emerald-300 dark:text-emerald-300">Refresh</button></div>
+          <div className="flex items-center justify-between px-4 pb-2 pt-3"><div><h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-200">My conversations</h3><p className="mt-0.5 text-[10px] text-slate-500">{filteredInbox.length} conversations</p></div><button type="button" onClick={() => void loadInbox()} className="text-xs font-bold text-emerald-300 dark:text-emerald-300">Refresh</button></div>
+          <div className="grid grid-cols-3 gap-1.5 px-3 pb-3">
+            {([{ id: 'all' as const, label: 'All', count: inbox.length }, { id: 'groups' as const, label: 'Groups', count: groupInbox.length }, { id: 'direct' as const, label: 'Direct', count: personalInbox.length }]).map((filter) => <button key={filter.id} type="button" onClick={() => setInboxFilter(filter.id)} aria-pressed={inboxFilter === filter.id} className={`rounded-xl px-2 py-2 text-[11px] font-extrabold transition ${inboxFilter === filter.id ? 'bg-emerald-600 text-white shadow-sm' : 'border border-emerald-900/60 bg-[#102322] text-slate-300 hover:bg-emerald-950'}`}>{filter.label}<span className="ml-1 opacity-75">{filter.count}</span></button>)}
+          </div>
           {loadingInbox ? <div className="space-y-3 p-4"><div className="shimmer-element h-12 rounded-xl" /><div className="shimmer-element h-12 rounded-xl" /><div className="shimmer-element h-12 rounded-xl" /></div>
-            : inbox.length ? inbox.map((item) => <button type="button" key={item.conversation_id} onClick={() => { setSelectedId(item.conversation_id); setNotice('') }} className={`flex w-full items-center gap-3 border-b border-emerald-900/30 px-3 py-3 text-left transition hover:bg-white/5 dark:border-slate-800 dark:hover:bg-slate-900 ${selectedId === item.conversation_id ? 'bg-emerald-950/70 dark:bg-slate-900' : ''}`}>
-              <Avatar name={item.other_full_name} url={item.other_avatar_url} />
-              <span className="min-w-0 flex-1"><span className="flex items-center gap-2"><span className="truncate text-sm font-bold text-white">{item.other_full_name}</span>{Number(item.unread_count) > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-600 px-1 text-[10px] font-extrabold text-white">{item.unread_count}</span>}</span><span className="block truncate text-xs text-slate-400">{item.last_message || (item.conversation_type === 'group' ? `Chat group · ${item.group_visibility}` : item.conversation_type === 'mentor' ? `Mentorship · @${item.other_username}` : `@${item.other_username}`)}</span></span>
+            : filteredInbox.length ? filteredInbox.map((item) => <button type="button" key={item.conversation_id} onClick={() => { setSelectedId(item.conversation_id); setNotice('') }} className={`flex w-full items-center gap-3 border-b border-emerald-900/30 px-3 py-3 text-left transition hover:bg-white/5 dark:border-slate-800 dark:hover:bg-slate-900 ${selectedId === item.conversation_id ? 'bg-emerald-950/70 dark:bg-slate-900' : ''}`}>
+              <Avatar name={item.other_full_name} url={item.conversation_type === 'group' ? null : item.other_avatar_url} />
+              <span className="min-w-0 flex-1"><span className="flex items-center gap-2"><span className="truncate text-sm font-bold text-white">{item.other_full_name}</span>{item.conversation_type === 'group' && <Users className="h-3.5 w-3.5 shrink-0 text-emerald-300"/>}{Number(item.unread_count) > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-600 px-1 text-[10px] font-extrabold text-white">{item.unread_count}</span>}</span><span className="block truncate text-xs text-slate-400">{item.last_message || (item.conversation_type === 'group' ? `Chat group · ${item.group_visibility}` : item.conversation_type === 'mentor' ? `Mentorship · @${item.other_username}` : `@${item.other_username}`)}</span></span>
               <span className="shrink-0 text-[10px] text-slate-500">{dayLabel(item.last_message_at)}</span>
             </button>)
-            : <div className="px-5 py-10 text-center"><MessageSquareText className="mx-auto h-8 w-8 text-emerald-600" /><p className="mt-2 text-sm font-bold text-white">Bado huna chat</p><p className="mt-1 text-xs leading-5 text-slate-400">Tafuta username ya rafiki yako ili kuanzisha mazungumzo.</p></div>}
-        </div>
-      </aside>
+            : <div className="px-5 py-10 text-center"><MessageSquareText className="mx-auto h-8 w-8 text-emerald-600" /><p className="mt-2 text-sm font-bold text-white">{inboxFilter === 'groups' ? 'Hakuna group conversation bado' : inboxFilter === 'direct' ? 'Hakuna direct conversation bado' : 'Bado huna chat'}</p><p className="mt-1 text-xs leading-5 text-slate-400">Tafuta username au fungua Chat Groups ili kuanza mazungumzo.</p></div>}
+        </div>      </aside>
 
       <div className={`${selectedId ? 'flex' : 'hidden md:flex'} sn-chat-stage min-h-0 min-w-0 flex-col overflow-hidden`}>
         {selectedId && activeConversation ? <>
