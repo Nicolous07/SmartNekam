@@ -31,8 +31,8 @@ export default async function InstitutionPage({ params, searchParams }: Params) 
 
   let alreadyJoined = false
   if (community) {
-    const { data: membership } = await supabase.from('institution_community_members').select('member_role').eq('community_id', community.id).eq('user_id', user.id).maybeSingle()
-    alreadyJoined = Boolean(membership)
+    const { data: membership } = await supabase.from('institution_community_members').select('member_role,verified_student').eq('community_id', community.id).eq('user_id', user.id).maybeSingle()
+    alreadyJoined = Boolean(membership?.verified_student && ['member','ambassador','admin'].includes(membership.member_role))
   }
 
   let initialCommunityPosts: {id:string;author_id:string;body:string;created_at:string}[] = []
