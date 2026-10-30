@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import MarkNotificationReadButton from '@/components/learning/MarkNotificationReadButton'
 import NotificationOpenLink from '@/components/notifications/NotificationOpenLink'
 import PushNotificationSetup from '@/components/notifications/PushNotificationSetup'
+import ClearAllNotificationsButton from '@/components/notifications/ClearAllNotificationsButton'
 
 type Notice = {
   id: string
@@ -97,6 +98,8 @@ export default async function NotificationsPage() {
     </section>
 
     <PushNotificationSetup variant="compact" />
+
+    <ClearAllNotificationsButton hasNotifications={rows.length > 0} />
 
     {error && <p className="rounded-xl bg-amber-50 p-4 text-sm text-amber-900 dark:bg-amber-950/50 dark:text-amber-100">Taarifa hazijapakiwa: {error.message}</p>}
 
