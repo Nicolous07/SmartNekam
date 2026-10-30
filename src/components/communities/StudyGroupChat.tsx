@@ -62,60 +62,147 @@ export function GroupPosts({ groupId, initialPosts }: { groupId: string; initial
   </section>
 }
 
-export function StudyGroupChat({ groupId, userId, isMember }: { groupId: string; userId: string; isMember: boolean }) {
+export function StudyGroupChat({ groupId, userId, isMember, groupName, memberCount }: { groupId: string; userId: string; isMember: boolean; groupName: string; memberCount: number }) {
   const supabase = useMemo(() => createClient(), [])
+  const { lowDataMode } = useDataSaver()
   const [messages, setMessages] = useState<Message[]>([])
   const [authors, setAuthors] = useState<Record<string, Identity>>({})
+  const [urls, setUrls] = useState<Record<string, string>>({})
+  const [revealed, setRevealed] = useState<Record<string, boolean>>({})
   const [body, setBody] = useState('')
+  const [files, setFiles] = useState<File[]>([])
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const bottomRef = useRef<HTMLDivElement>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
 
-  async function load() {
-    setLoading(true)
-    const { data, error: queryError } = await supabase.from('study_group_messages').select('id,group_id,sender_id,body,created_at').eq('group_id', groupId).order('created_at', { ascending: true }).limit(100)
-    if (queryError) setError('Imeshindikana kupakia chat. Hakikisha umejiunga na kikundi.')
-    else {
+  const load = useCallback(async (showLoader = true) => {
+    if (showLoader) setLoading(true)
+    const { data, error: queryError } = await supabase.from('study_group_messages')
+      .select('id,group_id,sender_id,body,attachment_paths,created_at')
+      .eq('group_id', groupId).order('created_at', { ascending: true }).limit(100)
+    if (queryError) {
+      setError('Imeshindikana kupakia chat. Hakikisha umejiunga na kikundi.')
+    } else {
       const rows = (data ?? []) as Message[]
       setMessages(rows)
-      setAuthors(await loadIdentities(supabase, rows.map((row) => row.sender_id)))
+      const paths = [...new Set(rows.flatMap((row) => row.attachment_paths ?? []))]
+      const [profiles, signed] = await Promise.all([
+        loadIdentities(supabase, rows.map((row) => row.sender_id)),
+        Promise.all(paths.map(async (path) => {
+          const { data: result } = await supabase.storage.from('community-attachments').createSignedUrl(path, 3600)
+          return [path, result?.signedUrl ?? ''] as const
+        })),
+      ])
+      setAuthors(profiles)
+      setUrls(Object.fromEntries(signed.filter((entry) => entry[1])))
       setError('')
     }
     setLoading(false)
-  }
+  }, [groupId, supabase])
 
   useEffect(() => {
-    if (isMember) void load()
-    else setLoading(false)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMember, groupId])
+    if (!isMember) { setLoading(false); return }
+    void load()
+    const channel = supabase.channel('study-group-chat-' + groupId)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'study_group_messages', filter: 'group_id=eq.' + groupId }, () => { void load(false) })
+      .subscribe()
+    return () => { void supabase.removeChannel(channel) }
+  }, [groupId, isMember, load, supabase])
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+  }, [messages.length])
 
   async function submit(e: FormEvent) {
     e.preventDefault()
     const text = body.trim()
-    if (!text || busy || !isMember) return
+    if ((!text && !files.length) || busy || !isMember) return
     setBusy(true); setError('')
+    const uploaded: string[] = []
     try {
-      const { error: insertError } = await supabase.from('study_group_messages').insert({ group_id: groupId, sender_id: userId, body: text })
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user || user.id !== userId) throw new Error('Session imebadilika. Ingia tena.')
+      for (const file of files) {
+        const name = file.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(-100) || 'attachment'
+        const path = user.id + '/groups/' + groupId + '/' + crypto.randomUUID() + '-' + name
+        const { error: uploadError } = await supabase.storage.from('community-attachments').upload(path, file, { cacheControl: '3600', upsert: false, contentType: file.type })
+        if (uploadError) throw uploadError
+        uploaded.push(path)
+      }
+      const { error: insertError } = await supabase.from('study_group_messages').insert({ group_id: groupId, sender_id: user.id, body: text, attachment_paths: uploaded })
       if (insertError) throw insertError
-      setBody('')
-      await load()
-    } catch (submitError) { setError(submitError instanceof Error ? submitError.message : 'Imeshindikana kutuma ujumbe.') }
-    finally { setBusy(false) }
+      setBody(''); setFiles([])
+      if (fileRef.current) fileRef.current.value = ''
+      await load(false)
+    } catch (err) {
+      if (uploaded.length) await supabase.storage.from('community-attachments').remove(uploaded)
+      setError(err instanceof Error ? err.message : 'Imeshindikana kutuma ujumbe.')
+    } finally { setBusy(false) }
   }
 
-  return <section className="geometric-card flex min-h-[320px] flex-col p-4 sm:p-5">
-    <div className="mb-3 flex items-center gap-2"><MessageCircle className="h-5 w-5 text-emerald-600" /><div><h2 className="font-heading font-extrabold text-slate-950 dark:text-white">Group chat</h2><p className="text-xs text-slate-500">Ujumbe wa wanachama wa kikundi.</p></div><button type="button" onClick={() => void load()} className="ml-auto rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-bold dark:border-slate-700">Refresh</button></div>
-    {!isMember ? <div className="rounded-xl bg-amber-50 p-4 text-sm text-amber-900 dark:bg-amber-950/40 dark:text-amber-100">Jiunge na kikundi ili kusoma na kutuma ujumbe wa chat.</div> : <>
-      <div className="mb-3 max-h-96 flex-1 space-y-3 overflow-y-auto rounded-xl bg-slate-50 p-3 dark:bg-slate-900/70">
-        {loading ? <p className="p-4 text-center text-sm text-slate-500">Inapakia chat...</p> : messages.length ? messages.map((item) => {
-          const mine=item.sender_id===userId
-          const name=mine?'Wewe':displayName(authors[item.sender_id])
-          return <div key={item.id} className={'max-w-[90%] rounded-2xl px-3 py-2 '+(mine?'ml-auto bg-emerald-600 text-white':'bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100')}>{!mine&&<p className="mb-1 text-[11px] font-extrabold text-violet-700 dark:text-violet-300">{name}</p>}<p className="whitespace-pre-wrap break-words text-sm">{item.body}</p><p className={'mt-1 text-[10px] '+(mine?'text-emerald-100':'text-slate-400')}>{name} · {new Date(item.created_at).toLocaleTimeString('sw-TZ',{hour:'2-digit',minute:'2-digit'})}</p></div>
-        }) : <p className="p-6 text-center text-sm text-slate-500">Hakuna ujumbe bado. Anza kuwasalimia wanachama.</p>}
+  function selectFiles(list: FileList | null) {
+    if (!list) return
+    const picked = Array.from(list)
+    if (files.length + picked.length > 4) { setError('Chagua picha/PDF zisizozidi 4 kwa ujumbe mmoja.'); return }
+    if (picked.some((file) => !(file.type.startsWith('image/') || file.type === 'application/pdf'))) { setError('Aina zinazoruhusiwa ni picha na PDF pekee.'); return }
+    if (picked.some((file) => file.size > 10 * 1024 * 1024)) { setError('Kila faili lisizidi 10 MB.'); return }
+    setError(''); setFiles((current) => [...current, ...picked])
+  }
+
+  async function deleteMessage(item: Message) {
+    if (item.sender_id !== userId || deletingId) return
+    if (!window.confirm('Una uhakika unataka kufuta ujumbe huu?')) return
+    setDeletingId(item.id)
+    const { error: deleteError } = await supabase.from('study_group_messages').delete().eq('id', item.id).eq('sender_id', userId)
+    if (deleteError) setError('Ujumbe haukufutwa: ' + deleteError.message)
+    else setMessages((current) => current.filter((message) => message.id !== item.id))
+    setDeletingId(null)
+  }
+
+  return <section className="sn-chat-shell flex h-[76dvh] min-h-[560px] max-h-[900px] flex-col overflow-hidden rounded-[28px] border">
+    <header className="sn-chat-topbar relative flex items-center justify-between gap-3 overflow-hidden border-b px-4 py-4 text-white sm:px-5">
+      <div className="pointer-events-none absolute -right-6 -top-12 h-32 w-32 rounded-full border-[18px] border-white/10" />
+      <div className="relative flex min-w-0 items-center gap-3">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10"><Users className="h-5 w-5" /></span>
+        <div className="min-w-0"><p className="text-[10px] font-extrabold uppercase tracking-[.18em] text-emerald-100">SmartNekam · Study Group</p><h2 className="truncate text-lg font-extrabold sm:text-xl">{groupName}</h2><p className="text-xs text-emerald-50/90">{memberCount} wanachama · Group chat</p></div>
       </div>
-      <form onSubmit={submit} className="flex items-end gap-2"><textarea rows={2} value={body} onChange={(e) => setBody(e.target.value)} maxLength={4000} required placeholder="Andika ujumbe..." className="min-w-0 flex-1 resize-y rounded-xl border border-slate-200 bg-white p-3 text-sm outline-none focus:border-emerald-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white" /><button disabled={busy || !body.trim()} aria-label="Tuma ujumbe" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white disabled:opacity-50">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}</button></form>
+      <button type="button" onClick={() => void load()} disabled={loading} aria-label="Refresh chat" title="Pakia upya" className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/20 bg-white/10 transition hover:bg-white/20 disabled:opacity-50"><RefreshCw className={'h-4 w-4 ' + (loading ? 'animate-spin' : '')} /></button>
+    </header>
+    {!isMember ? <div className="flex flex-1 flex-col items-center justify-center px-6 py-12 text-center"><Users className="h-10 w-10 text-amber-600" /><h3 className="mt-4 font-extrabold text-slate-900 dark:text-white">Jiunge na group kuingia kwenye chat</h3><p className="mt-2 max-w-sm text-sm text-slate-500">Ukiwa mwanachama utaweza kusoma na kutuma ujumbe kwenye kikundi hiki.</p></div> : <>
+      <div className="sn-chat-thread min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-3 py-5 sm:px-5">
+        {loading && !messages.length ? <div className="space-y-3"><div className="shimmer-element h-14 w-2/3 rounded-2xl" /><div className="shimmer-element ml-auto h-14 w-1/2 rounded-2xl" /></div> :
+        !messages.length ? <div className="flex h-full min-h-56 flex-col items-center justify-center text-center"><span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"><MessageCircle className="h-7 w-7" /></span><h3 className="mt-3 font-extrabold text-slate-900 dark:text-white">Anza mazungumzo ya group</h3><p className="mt-1 max-w-xs text-sm text-slate-500">Salimia wanachama na mshirikishane maarifa.</p></div> :
+        messages.map((item) => {
+          const mine = item.sender_id === userId
+          const name = mine ? 'Wewe' : displayName(authors[item.sender_id])
+          return <div key={item.id} className={'flex items-end gap-2 sm:gap-3 ' + (mine ? 'justify-end' : 'justify-start')}>
+            {!mine && <span className="mb-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-[11px] font-black text-white">{initials(name)}</span>}
+            <div className={'max-w-[88%] rounded-[22px] px-3.5 py-2.5 shadow-sm sm:max-w-[78%] ' + (mine ? 'rounded-br-md bg-emerald-700 text-white' : 'rounded-bl-md border border-slate-200 bg-white text-slate-800 dark:border-slate-700 dark:bg-[#121826] dark:text-slate-100')}>
+              {!mine && <p className="mb-1 text-[11px] font-extrabold text-violet-700 dark:text-violet-300">{name}</p>}
+              {(item.attachment_paths ?? []).map((path) => {
+                const url = urls[path]
+                const fileName = path.split('/').pop()?.replace(/^[0-9a-f-]{20,}-/i, '') || 'Kiambatisho'
+                const isImage = /\.(png|jpe?g|webp|gif|heic|heif)$/i.test(fileName)
+                return <div key={path} className="mb-2">{!url ? <p className="text-xs">Kiambatisho kinapakia…</p> : isImage ? lowDataMode && !revealed[path] ? <button type="button" onClick={() => setRevealed((old) => ({ ...old, [path]: true }))} className="inline-flex items-center gap-2 rounded-xl border border-dashed border-emerald-300 px-3 py-2 text-xs font-bold"><ImageIcon className="h-4 w-4" />Gusa kuonyesha picha</button> : <a href={url} target="_blank" rel="noreferrer"><img src={url} alt={fileName} loading="lazy" decoding="async" className="max-h-64 max-w-full rounded-xl object-contain" /></a> : <a href={url} target="_blank" rel="noreferrer" className="flex items-center gap-2 rounded-xl border border-current/15 bg-black/5 px-3 py-2 text-xs font-bold"><FileText className="h-4 w-4 shrink-0" /><span className="min-w-0 flex-1 break-all">{fileName}</span><Download className="h-4 w-4 shrink-0" /></a>}</div>
+              })}
+              {item.body && <p className="whitespace-pre-wrap break-words text-sm leading-5">{item.body}</p>}
+              <div className={'mt-1 flex items-center justify-end gap-1 text-[10px] ' + (mine ? 'text-emerald-100' : 'text-slate-400')}><span>{timeLabel(item.created_at)}</span>{mine && <Check className="h-3.5 w-3.5" />}{mine && <button type="button" onClick={() => void deleteMessage(item)} disabled={deletingId === item.id} aria-label="Futa ujumbe" className="ml-1 rounded-md p-1 hover:bg-white/15">{deletingId === item.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}</button>}</div>
+            </div>
+            {mine && <span className="mb-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-700 text-[11px] font-black text-white">WE</span>}
+          </div>
+        })}
+        <div ref={bottomRef} />
+      </div>
+      {files.length > 0 && <div className="mx-3 mb-2 flex flex-wrap gap-2 rounded-xl border border-emerald-100 bg-emerald-50/90 p-2.5 dark:border-slate-700 dark:bg-slate-900">{files.map((file, index) => <span key={file.name + file.size + index} className="inline-flex max-w-full items-center gap-2 rounded-lg bg-white px-2.5 py-1.5 text-xs text-slate-700 dark:bg-slate-800 dark:text-slate-200"><Paperclip className="h-3.5 w-3.5" /><span className="max-w-[180px] truncate">{file.name}</span><button type="button" onClick={() => setFiles((old) => old.filter((_, i) => i !== index))} aria-label="Ondoa kiambatisho"><X className="h-3.5 w-3.5" /></button></span>)}</div>}
+      {error && <p role="alert" className="mx-3 mb-2 rounded-xl bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-900 dark:bg-amber-950/40 dark:text-amber-100">{error}</p>}
+      <form onSubmit={submit} className="sn-chat-composer flex items-end gap-2 border-t p-3 backdrop-blur-md sm:gap-3 sm:p-4">
+        <label title="Ambatanisha picha au PDF" className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full border border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50 dark:border-slate-700 dark:bg-slate-900 dark:text-emerald-300"><Paperclip className="h-5 w-5" /><input ref={fileRef} type="file" multiple accept="image/png,image/jpeg,image/webp,image/gif,image/heic,image/heif,application/pdf" className="sr-only" disabled={busy} onChange={(e) => { selectFiles(e.currentTarget.files); e.currentTarget.value = '' }} /></label>
+        <textarea value={body} onChange={(e) => setBody(e.target.value.slice(0, 4000))} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); e.currentTarget.form?.requestSubmit() } }} rows={1} maxLength={4000} placeholder="Andika ujumbe kwa wanachama..." disabled={busy} className="sn-chat-composer-input max-h-28 min-h-11 min-w-0 flex-1 resize-y rounded-[22px] border px-4 py-3 text-sm outline-none placeholder:text-slate-400 disabled:opacity-60" />
+        <button type="submit" disabled={busy || (!body.trim() && !files.length)} aria-label="Tuma ujumbe" className="sn-chat-send flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition active:scale-95 disabled:opacity-40">{busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}</button>
+      </form>
     </>}
-    {error && <p role="alert" className="mt-3 rounded-lg bg-red-50 p-3 text-xs text-red-700">{error}</p>}
   </section>
 }
