@@ -74,8 +74,8 @@ export function GroupPosts({ groupId, initialPosts }: { groupId: string; initial
     }
   }
 
-  return <section className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-[#111923]">
-    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-4 py-4 sm:px-5 dark:border-slate-800">
+  return <section className="flex h-[76dvh] min-h-[560px] max-h-[900px] flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-[#111923]">
+    <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-4 py-4 sm:px-5 dark:border-slate-800">
       <div className="flex min-w-0 items-center gap-3">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300"><MessageCircle className="h-5 w-5" /></span>
         <div className="min-w-0">
@@ -86,7 +86,7 @@ export function GroupPosts({ groupId, initialPosts }: { groupId: string; initial
       <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300"><Users className="h-3.5 w-3.5" />{posts.length} {posts.length === 1 ? 'post' : 'posts'}</span>
     </div>
 
-    <form onSubmit={submit} className="border-b border-slate-100 bg-slate-50/80 p-4 sm:p-5 dark:border-slate-800 dark:bg-[#0d151e]">
+    <form onSubmit={submit} className="shrink-0 border-b border-slate-100 bg-slate-50/80 p-4 sm:p-5 dark:border-slate-800 dark:bg-[#0d151e]">
       <div className="flex items-start gap-3">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-700 text-xs font-black text-white shadow-sm">WE</span>
         <div className="min-w-0 flex-1">
@@ -118,7 +118,7 @@ export function GroupPosts({ groupId, initialPosts }: { groupId: string; initial
       {message && <p role="status" className="mt-3 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300">{message}</p>}
     </form>
 
-    <div className="divide-y divide-slate-100 dark:divide-slate-800">
+    <div className="min-h-0 flex-1 divide-y divide-slate-100 overflow-y-auto overscroll-contain dark:divide-slate-800">
       {posts.length ? posts.map((post) => {
         const name = displayName(authors[post.author_id])
         const isExpanded = expandedPostIds.has(post.id)
@@ -132,7 +132,7 @@ export function GroupPosts({ groupId, initialPosts }: { groupId: string; initial
                 <span className="text-slate-300 dark:text-slate-600">·</span>
                 <time dateTime={post.created_at} className="text-[11px] text-slate-400">{new Date(post.created_at).toLocaleString('sw-TZ', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</time>
               </div>
-              <p className={`mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-slate-700 dark:text-slate-200 ${isLongPost && !isExpanded ? 'line-clamp-4' : ''}`}>{post.body}</p>
+              <p className={`mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-slate-700 dark:text-slate-200 ${isLongPost ? (isExpanded ? 'max-h-40 overflow-y-auto overscroll-contain pr-2' : 'line-clamp-4') : ''}`}>{post.body}</p>
               {isLongPost && <button
                 type="button"
                 onClick={() => setExpandedPostIds((current) => {
@@ -376,7 +376,7 @@ export function InstitutionCommunityRoom({ communityId, userId, communityName, i
 
   return <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(340px,0.9fr)]">
     <div className="min-w-0">
-    <section className="sn-chat-shell flex h-[70dvh] min-h-[500px] max-h-[820px] flex-col overflow-hidden rounded-[26px] border">
+    <section className="sn-chat-shell flex h-[76dvh] min-h-[560px] max-h-[900px] flex-col overflow-hidden rounded-[26px] border">
       <header className="sn-chat-topbar flex items-center gap-3 border-b px-4 py-4 text-white sm:px-5">
         <span className="flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-white/10"><Users className="h-5 w-5"/></span>
         <div className="min-w-0"><p className="text-[10px] font-extrabold uppercase tracking-[.16em] text-emerald-100">Official School Community</p><h2 className="truncate text-lg font-extrabold">{communityName}</h2><p className="text-xs text-emerald-50/90">Mazungumzo ya wanafunzi wa taasisi hii</p></div>
@@ -405,16 +405,16 @@ export function InstitutionCommunityRoom({ communityId, userId, communityName, i
     </div>
 
     <div className="min-w-0 lg:sticky lg:top-4 lg:max-h-[70dvh] lg:overflow-y-auto lg:overscroll-contain lg:rounded-[24px]">
-    <section className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-[#111923]">
-      <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-4 sm:px-5 dark:border-slate-800">
+    <section className="flex h-[76dvh] min-h-[560px] max-h-[900px] flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-[#111923]">
+      <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-100 px-4 py-4 sm:px-5 dark:border-slate-800">
         <div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300"><MessageCircle className="h-5 w-5"/></span><div><h2 className="font-heading text-base font-extrabold text-slate-950 dark:text-white">Mijadala ya taasisi</h2><p className="text-xs text-slate-500">Maswali, mawazo na taarifa za wanafunzi.</p></div></div>
         <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">{posts.length} posts</span>
       </div>
-      <form onSubmit={submitPost} className="border-b border-slate-100 bg-slate-50/80 p-4 sm:p-5 dark:border-slate-800 dark:bg-[#0d151e]">
+      <form onSubmit={submitPost} className="shrink-0 border-b border-slate-100 bg-slate-50/80 p-4 sm:p-5 dark:border-slate-800 dark:bg-[#0d151e]">
         <textarea value={postBody} onChange={e => setPostBody(e.target.value.slice(0,5000))} rows={2} maxLength={5000} placeholder="Una jambo la kushirikisha wanafunzi? Andika hapa..." className="min-h-[76px] w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm leading-6 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 dark:border-slate-700 dark:bg-[#111923] dark:text-slate-100"/>
         <div className="mt-2 flex items-center justify-between gap-2"><span className="text-[11px] text-slate-400">{postBody.length}/5,000</span><button type="submit" disabled={busyPost||postBody.trim().length<2} className="inline-flex h-9 items-center gap-2 rounded-xl bg-emerald-600 px-4 text-xs font-extrabold text-white disabled:opacity-50">{busyPost?<Loader2 className="h-4 w-4 animate-spin"/>:<Send className="h-4 w-4"/>}Chapisha post</button></div>
       </form>
-      <div className="divide-y divide-slate-100 dark:divide-slate-800">
+      <div className="min-h-0 flex-1 divide-y divide-slate-100 overflow-y-auto overscroll-contain dark:divide-slate-800">
         {posts.length ? posts.map(post => {
           const name = displayName(authors[post.author_id])
           const isExpanded = expanded.has(post.id)
@@ -422,7 +422,7 @@ export function InstitutionCommunityRoom({ communityId, userId, communityName, i
           return <article key={post.id} className="px-4 py-4 sm:px-5">
             <div className="flex items-start gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-xs font-black text-white">{initials(name)}</span><div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2"><p className="text-sm font-extrabold text-slate-900 dark:text-slate-100">{name}</p><span className="text-slate-300">·</span><time className="text-[11px] text-slate-400">{new Date(post.created_at).toLocaleString('sw-TZ',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</time></div>
-              <p className={'mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-slate-700 dark:text-slate-200 ' + (long&&!isExpanded?'line-clamp-4':'')}>{post.body}</p>
+              <p className={'mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-slate-700 dark:text-slate-200 ' + (long?(isExpanded?'max-h-40 overflow-y-auto overscroll-contain pr-2':'line-clamp-4'):'')}>{post.body}</p>
               {long&&<button type="button" aria-expanded={isExpanded} onClick={()=>setExpanded(old=>{const next=new Set(old);if(next.has(post.id))next.delete(post.id);else next.add(post.id);return next})} className="mt-2 text-xs font-extrabold text-emerald-700 hover:underline dark:text-emerald-300">{isExpanded?'Show less':'Show more'}</button>}
             </div></div>
           </article>
