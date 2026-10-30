@@ -1,11 +1,12 @@
 'use client'
 
-import { FormEvent, useEffect, useMemo, useState } from 'react'
-import { Loader2, MessageCircle, Send, Users } from 'lucide-react'
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Check, Download, FileText, Image as ImageIcon, Loader2, MessageCircle, Paperclip, RefreshCw, Send, Trash2, Users, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { useDataSaver } from '@/components/data-saver/DataSaverProvider'
 
 type Identity = { full_name: string | null; username: string | null }
-type Message = { id: string; group_id: string; sender_id: string; body: string; created_at: string }
+type Message = { id: string; group_id: string; sender_id: string; body: string; attachment_paths: string[]; created_at: string }
 type Post = { id: string; author_id: string; body: string; created_at: string }
 
 function initials(name: string) {
