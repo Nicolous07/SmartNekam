@@ -82,19 +82,19 @@ export default function AdminAnalyticsCharts({ initialData }: { initialData: Dai
     setDays(nextDays)
     setLoading(true)
     setError('')
-    const { data, error: queryError } = await supabase.rpc('admin_smartnekam_daily_analytics', { p_days: Number(nextDays) })
-    if (queryError) {
-      setError('Imeshindikana kupakia takwimu za kipindi hiki. Hakikisha migration 048 imeendeshwa kwenye database.')
-    } else {
-      setRows((data ?? []) as DailyAnalyticsRow[])
+    try {
+      const { data, error: queryError } = await supabase.rpc('admin_smartnekam_daily_analytics', { p_days: Number(nextDays) })
+      if (queryError) {
+        setError('Imeshindikana kupakia takwimu za kipindi hiki. Hakikisha migration 048 imeendeshwa kwenye database.')
+      } else {
+        setRows((data ?? []) as DailyAnalyticsRow[])
+      }
+    } catch {
+      setError('Muunganisho umeshindikana. Jaribu tena baada ya muda mfupi.')
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
-
-  const totals = useMemo(() => metrics.map((metric) => ({
-    label: metric.label,
-    total: rows.reduce((sum, row) => sum + Number(row[metric.key] ?? 0), 0),
-  })), [rows])
 
   return (
     <section className="space-y-3" aria-label="SmartNekam analytics trends">
