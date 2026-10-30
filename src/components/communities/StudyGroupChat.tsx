@@ -24,6 +24,10 @@ function displayName(identity: Identity | undefined, fallback = 'Mwanafunzi') {
   return identity?.full_name || (identity?.username ? '@' + identity.username : fallback)
 }
 
+function timeLabel(value: string) {
+  return new Date(value).toLocaleTimeString('sw-TZ', { hour: '2-digit', minute: '2-digit' })
+}
+
 export function GroupPosts({ groupId, initialPosts }: { groupId: string; initialPosts: Post[] }) {
   const supabase = useMemo(() => createClient(), [])
   const [posts, setPosts] = useState(initialPosts)
