@@ -266,7 +266,8 @@ export default function DirectMessages() {
   const loadInbox = useCallback(async () => {
     const { data, error } = await supabase.rpc('get_my_chat_inbox')
     if (error) {
-      setNotice('Imeshindikana kupakia chats. Hakikisha umeendesha SQL 016 na SQL 006/013 zimefanikiwa.')
+      const details = [error.message, error.details, error.hint].filter(Boolean).join(' · ')
+      setNotice(`Chats hazijapakiwa: ${details || 'Hitilafu ya kuwasiliana na hifadhi ya mazungumzo.'}`)
     } else {
       const items = (data ?? []) as InboxItem[]
       setInbox(items)
@@ -445,6 +446,54 @@ export default function DirectMessages() {
     void initialize()
     return () => { cancelled = true }
   }, [loadInbox, loadGroups, supabase])
+
+  // Keep the inbox live even when no conversation is currently selected.
+  // RLS on chat_messages/chat_participants limits delivered rows to conversations
+  // the signed-in user is allowed to access.
+  useEffect(() => {
+    if (!myUserId) return
+
+    let disposed = false
+    let refreshTimer: number | null = null
+    const scheduleInboxRefresh = () => {
+      if (disposed || document.visibilityState === 'hidden') return
+      if (refreshTimer !== null) window.clearTimeout(refreshTimer)
+      refreshTimer = window.setTimeout(() => {
+        refreshTimer = null
+        if (!disposed) void loadInbox()
+      }, 250)
+    }
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') scheduleInboxRefresh()
+    }
+
+    const inboxChannel = supabase.channel(`smartnekam-inbox-${myUserId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'chat_participants',
+        filter: `user_id=eq.${myUserId}`,
+      }, scheduleInboxRefresh)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'chat_messages',
+      }, scheduleInboxRefresh)
+      .subscribe()
+
+    window.addEventListener('focus', scheduleInboxRefresh)
+    window.addEventListener('online', scheduleInboxRefresh)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      disposed = true
+      if (refreshTimer !== null) window.clearTimeout(refreshTimer)
+      window.removeEventListener('focus', scheduleInboxRefresh)
+      window.removeEventListener('online', scheduleInboxRefresh)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      void supabase.removeChannel(inboxChannel)
+    }
+  }, [myUserId, supabase, loadInbox])
 
   useEffect(() => {
     const q = search.trim().replace(/^@/, '')
