@@ -31,6 +31,7 @@ function timeLabel(value: string) {
 export function GroupPosts({ groupId, initialPosts }: { groupId: string; initialPosts: Post[] }) {
   const supabase = useMemo(() => createClient(), [])
   const [posts, setPosts] = useState(initialPosts)
+  const [expandedPostIds, setExpandedPostIds] = useState<Set<string>>(() => new Set())
   const [authors, setAuthors] = useState<Record<string, Identity>>({})
   const [body, setBody] = useState('')
   const [busy, setBusy] = useState(false)
@@ -120,6 +121,8 @@ export function GroupPosts({ groupId, initialPosts }: { groupId: string; initial
     <div className="divide-y divide-slate-100 dark:divide-slate-800">
       {posts.length ? posts.map((post) => {
         const name = displayName(authors[post.author_id])
+        const isExpanded = expandedPostIds.has(post.id)
+        const isLongPost = post.body.length > 260
         return <article key={post.id} className="px-4 py-4 transition-colors hover:bg-slate-50/70 sm:px-5 dark:hover:bg-white/[0.02]">
           <div className="flex items-start gap-3">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-xs font-black text-white">{initials(name)}</span>
@@ -129,7 +132,18 @@ export function GroupPosts({ groupId, initialPosts }: { groupId: string; initial
                 <span className="text-slate-300 dark:text-slate-600">·</span>
                 <time dateTime={post.created_at} className="text-[11px] text-slate-400">{new Date(post.created_at).toLocaleString('sw-TZ', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</time>
               </div>
-              <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-slate-700 dark:text-slate-200">{post.body}</p>
+              <p className={`mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-slate-700 dark:text-slate-200 ${isLongPost && !isExpanded ? 'line-clamp-4' : ''}`}>{post.body}</p>
+              {isLongPost && <button
+                type="button"
+                onClick={() => setExpandedPostIds((current) => {
+                  const next = new Set(current)
+                  if (next.has(post.id)) next.delete(post.id)
+                  else next.add(post.id)
+                  return next
+                })}
+                aria-expanded={isExpanded}
+                className="mt-2 inline-flex items-center rounded-lg py-1 text-xs font-extrabold text-emerald-700 transition hover:text-emerald-800 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:text-emerald-300 dark:hover:text-emerald-200"
+              >{isExpanded ? 'Show less' : 'Show more'}</button>}
             </div>
           </div>
         </article>
