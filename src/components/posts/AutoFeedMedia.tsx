@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import type { RefObject } from 'react'
 
 type FeedMediaNode = HTMLVideoElement | HTMLIFrameElement
@@ -133,7 +133,7 @@ export function AutoFeedVideo({
   controls = true,
   ariaLabel = 'Video ya SmartNekam',
   className = '',
-  preload = 'metadata',
+  preload = 'none',
 }: {
   src: string
   mimeType?: string
@@ -143,35 +143,12 @@ export function AutoFeedVideo({
   preload?: 'none' | 'metadata' | 'auto'
 }) {
   const videoRef = useRef<HTMLVideoElement>(null)
-  const previewCaptured = useRef(false)
-  const [previewFrame, setPreviewFrame] = useState<string | null>(null)
-  const [useVideoPreview, setUseVideoPreview] = useState(false)
   const useCors = usesSupabaseCors(src)
-
-  const capturePreviewFrame = useCallback((video: HTMLVideoElement) => {
-    if (previewCaptured.current || !video.videoWidth || !video.videoHeight) return
-    previewCaptured.current = true
-    try {
-      // Tumia fremu moja ndogo ya video iliyopakiwa tayari; usipakue video nzima kwa background.
-      const scale = Math.min(1, 480 / video.videoWidth)
-      const canvas = document.createElement('canvas')
-      canvas.width = Math.max(1, Math.round(video.videoWidth * scale))
-      canvas.height = Math.max(1, Math.round(video.videoHeight * scale))
-      const context = canvas.getContext('2d')
-      if (!context) throw new Error('Canvas context haipatikani')
-      context.drawImage(video, 0, 0, canvas.width, canvas.height)
-      const frame = canvas.toDataURL('image/jpeg', 0.68)
-      setPreviewFrame(frame)
-    } catch {
-      // CDN nyingine haziruhusu canvas kusoma fremu; tumia video ileile kama blur ya fallback.
-      setUseVideoPreview(true)
-    }
-  }, [])
 
   const play = useCallback(() => {
     const video = videoRef.current
     if (!video) return
-    // Autoplay yenye sauti huzuiwa na browser nyingi; mtumiaji bado anaweza kuwasha sauti kupitia controls.
+    // Pakia video pale tu inapokuwa ndiyo media inayoonekana zaidi kwenye feed.
     video.muted = true
     video.defaultMuted = true
     const playback = video.play()
@@ -191,32 +168,6 @@ export function AutoFeedVideo({
 
   return (
     <div className="relative isolate w-full overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-      {previewFrame ? (
-        <img
-          src={previewFrame}
-          alt=""
-          aria-hidden="true"
-          draggable={false}
-          className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover opacity-70 blur-2xl"
-        />
-      ) : useVideoPreview ? (
-        <video
-          aria-hidden="true"
-          tabIndex={-1}
-          muted
-          playsInline
-          preload="metadata"
-          src={mimeType ? undefined : src}
-          className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover opacity-70 blur-2xl"
-          onLoadedData={(event) => event.currentTarget.pause()}
-          onError={(event) => {
-            // Video inaendelea kufanya kazi mbele hata kama CDN hairuhusu background preview.
-            event.currentTarget.style.display = 'none'
-          }}
-        >
-          {mimeType && <source src={src} type={mimeType} />}
-        </video>
-      ) : null}
       <video
         ref={videoRef}
         src={mimeType ? undefined : src}
@@ -228,7 +179,6 @@ export function AutoFeedVideo({
         aria-label={ariaLabel}
         className={`relative z-10 ${className}`}
         style={{ backgroundColor: 'transparent' }}
-        onLoadedData={(event) => capturePreviewFrame(event.currentTarget)}
         onPlay={() => videoRef.current && claimFeedMedia(videoRef.current)}
       >
         {mimeType && <source src={src} type={mimeType} />}
