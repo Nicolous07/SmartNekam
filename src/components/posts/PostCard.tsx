@@ -369,10 +369,12 @@ export default function PostCard({
                   triggerLabel={`Tazama picha ya post kwa ukubwa kamili: ${attachment.name || 'Picha'}`}
                   className="group relative block w-full overflow-hidden rounded-2xl border border-emerald-100 bg-slate-950 text-left dark:border-slate-800"
                 >
-                  <span className="relative flex min-h-[12rem] w-full items-center justify-center overflow-hidden bg-slate-950">
-                    {/* Hifadhi uwiano wa picha za portrait/landscape bila kuzikata. */}
+                  <span className="relative isolate flex min-h-[12rem] w-full items-center justify-center overflow-hidden bg-slate-950">
+                    {/* Background iliyofifishwa hujaza nafasi wazi pembeni bila kuikata picha kuu. */}
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={attachment.url} alt={attachment.name || 'Picha ya post'} loading="lazy" decoding="async" className="h-auto max-h-[min(78svh,760px)] w-full object-contain transition duration-300 group-hover:scale-[1.01]" />
+                    <img src={attachment.url} alt="" aria-hidden="true" draggable={false} loading="lazy" decoding="async" className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover opacity-65 blur-2xl" />
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={attachment.url} alt={attachment.name || 'Picha ya post'} loading="lazy" decoding="async" className="relative z-10 h-auto max-h-[min(78svh,760px)] w-full object-contain transition duration-300 group-hover:scale-[1.01]" />
                   </span>
                 </ImageLightbox>
               )
@@ -411,9 +413,12 @@ export default function PostCard({
             triggerLabel="Tazama picha ya post kwa ukubwa kamili"
             className="mt-3 block w-full cursor-zoom-in overflow-hidden rounded-2xl border-0 bg-slate-950 p-0 text-left"
           >
-            <span className="relative flex min-h-[12rem] w-full items-center justify-center overflow-hidden bg-slate-950">
+            <span className="relative isolate flex min-h-[12rem] w-full items-center justify-center overflow-hidden bg-slate-950">
+              {/* Picha iliyofifishwa hujaza nafasi iliyo wazi pembeni bila kukata picha kuu. */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={post.image_url} alt="Picha ya post" loading="lazy" decoding="async" className="h-auto max-h-[min(78svh,760px)] w-full object-contain" />
+              <img src={post.image_url} alt="" aria-hidden="true" draggable={false} loading="lazy" decoding="async" className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover opacity-65 blur-2xl" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={post.image_url} alt="Picha ya post" loading="lazy" decoding="async" className="relative z-10 h-auto max-h-[min(78svh,760px)] w-full object-contain" />
             </span>
           </ImageLightbox>
         )
