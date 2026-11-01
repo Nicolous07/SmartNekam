@@ -370,8 +370,9 @@ export default function PostCard({
                   className="group relative block w-full overflow-hidden rounded-2xl border border-emerald-100 bg-slate-950 text-left dark:border-slate-800"
                 >
                   <span className="relative flex min-h-[12rem] w-full items-center justify-center overflow-hidden bg-slate-950">
+                    {/* Hifadhi uwiano wa picha za portrait/landscape bila kuzikata. */}
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={attachment.url} alt={attachment.name || 'Picha ya post'} loading="lazy" decoding="async" className="max-h-[28rem] w-full object-contain transition duration-300 group-hover:scale-[1.01]" />
+                    <img src={attachment.url} alt={attachment.name || 'Picha ya post'} loading="lazy" decoding="async" className="h-auto max-h-[min(78svh,760px)] w-full object-contain transition duration-300 group-hover:scale-[1.01]" />
                   </span>
                 </ImageLightbox>
               )
@@ -383,7 +384,7 @@ export default function PostCard({
                     mimeType={attachment.mime_type}
                     controls
                     ariaLabel={attachment.name || 'Video fupi ya post'}
-                    className="aspect-video max-h-[28rem] w-full bg-black object-contain"
+                    className="h-auto max-h-[min(78svh,760px)] w-full bg-black object-contain"
                   />
                   <div className="flex items-center justify-between gap-2 px-3 py-2 text-[11px] text-slate-300">
                     <span className="min-w-0 truncate">{attachment.name || 'Video fupi'}</span>
@@ -412,7 +413,7 @@ export default function PostCard({
           >
             <span className="relative flex min-h-[12rem] w-full items-center justify-center overflow-hidden bg-slate-950">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={post.image_url} alt="Picha ya post" loading="lazy" decoding="async" className="max-h-96 w-full object-contain" />
+              <img src={post.image_url} alt="Picha ya post" loading="lazy" decoding="async" className="h-auto max-h-[min(78svh,760px)] w-full object-contain" />
             </span>
           </ImageLightbox>
         )
