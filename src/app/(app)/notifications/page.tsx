@@ -7,6 +7,8 @@ import NotificationOpenLink from '@/components/notifications/NotificationOpenLin
 import PushNotificationSetup from '@/components/notifications/PushNotificationSetup'
 import ClearAllNotificationsButton from '@/components/notifications/ClearAllNotificationsButton'
 
+export const dynamic = 'force-dynamic'
+
 type Notice = {
   id: string
   title: string
