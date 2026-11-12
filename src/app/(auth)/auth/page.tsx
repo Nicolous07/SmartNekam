@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Eye, EyeOff, GraduationCap, Loader2, Mail, Lock, BookOpen, MessagesSquare, Briefcase, Phone, ShieldCheck } from 'lucide-react'
+import { Eye, EyeOff, GraduationCap, Loader2, Mail, Lock, BookOpen, MessagesSquare, Briefcase } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import InstitutionSearchField from '@/components/institutions/InstitutionSearchField'
 import ThemeToggle from '@/components/layout/ThemeToggle'
@@ -25,10 +25,6 @@ export default function AuthPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
-  const [authMethod, setAuthMethod] = useState<'email' | 'phone'>('email')
-  const [phone, setPhone] = useState('+255')
-  const [otp, setOtp] = useState('')
-  const [otpSent, setOtpSent] = useState(false)
 
   // Show authentication callback errors once, then clean the URL.
   useEffect(() => {
@@ -47,11 +43,11 @@ export default function AuthPage() {
     } else if (reason === 'provider_error') {
       callbackMessage = providerDescription
         ? `Mtoa huduma wa kuingia amekataa ombi: ${providerDescription}`
-        : 'Mtoa huduma wa kuingia amekataa ombi. Jaribu tena au tumia barua pepe/nywila au namba ya simu.'
+        : 'Mtoa huduma wa kuingia amekataa ombi. Jaribu tena kwa barua pepe na nywila.'
     } else if (reason === 'server_error') {
       callbackMessage = 'Seva imeshindwa kukamilisha uthibitisho. Hakikisha mipangilio ya Supabase iko sahihi, kisha jaribu tena.'
     } else {
-      callbackMessage = 'Imeshindikana kukamilisha kuingia. Jaribu tena kwa barua pepe/nywila au namba ya simu.'
+      callbackMessage = 'Imeshindikana kukamilisha kuingia. Jaribu tena kwa barua pepe na nywila.'
     }
 
     setError(callbackMessage)
@@ -67,7 +63,7 @@ export default function AuthPage() {
     setMessage(null)
 
     try {
-      if (mode === 'register' && !(authMethod === 'phone' && otpSent)) {
+      if (mode === 'register') {
         const cleanName = displayName.trim().replace(/\s+/g, ' ')
         const cleanUsername = username.trim().toLowerCase()
         const normalizeIdentity = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, '')
@@ -102,62 +98,6 @@ export default function AuthPage() {
           setError('Username hii imeshatumika au haikubaliki. Chagua username nyingine.')
           return
         }
-      }
-
-      if (authMethod === 'phone') {
-        const normalizedPhone = phone.trim().replace(/[\s()-]/g, '')
-        if (!/^\+[1-9]\d{7,14}$/.test(normalizedPhone)) {
-          setError('Tumia namba ya kimataifa, kwa mfano +255712345678.')
-          return
-        }
-        if (!otpSent) {
-          const { error: otpError } = await supabase.auth.signInWithOtp({
-            phone: normalizedPhone,
-            options: {
-              shouldCreateUser: mode === 'register',
-              ...(mode === 'register' ? { data: { full_name: displayName.trim().replace(/\s+/g, ' '), username: username.trim().toLowerCase(), level: studyLevel, form_or_year: formOrYear.trim(), school_id: studyLevel !== 'UNIVERSITY' && schoolId !== '__other__' ? schoolId || null : null, university_id: studyLevel === 'UNIVERSITY' && universityId !== '__other__' ? universityId || null : null, institution_name: (studyLevel === 'UNIVERSITY' ? universityId === '__other__' : schoolId === '__other__') ? otherInstitutionName.trim() : null } } : {}),
-            },
-          })
-          if (otpError) {
-            const detail = otpError.message.toLowerCase()
-            if (detail.includes('signups not allowed for otp') || detail.includes('otp_disabled')) {
-              setError(
-                mode === 'register'
-                  ? 'Supabase imezuia usajili kwa OTP. Fungua Supabase Dashboard → Authentication → Sign In / Providers; ruhusu signups/new users, washa Phone provider, na hakikisha SMS provider (mf. Twilio/Vonage) ina credentials sahihi. Hifadhi mabadiliko kisha jaribu tena.'
-                  : 'Namba hii huenda bado haina akaunti ya SmartNekam. Badili kwenda “Jisajili” kama ni mara ya kwanza. Ikiwa tayari una akaunti, hakikisha Phone provider imewashwa kwenye Supabase Auth.'
-              )
-            } else if (detail.includes('phone provider') || detail.includes('provider is not enabled') || detail.includes('unsupported phone')) {
-              setError('Phone Auth haijawashwa kwenye Supabase. Nenda Authentication → Sign In / Providers → Phone, washa provider na weka SMS provider yenye credentials halali.')
-            } else if (detail.includes('rate limit') || detail.includes('too many requests')) {
-              setError('Umeomba OTP mara nyingi. Subiri angalau sekunde 60, kisha jaribu tena.')
-            } else {
-              setError(`OTP haikutumwa: ${otpError.message}. Kagua Authentication → Sign In / Providers → Phone na mipangilio ya SMS provider.`)
-            }
-            return
-          }
-          setOtpSent(true)
-          setMessage(`Tumetuma OTP kwa ${normalizedPhone}. Ingiza namba sita kuthibitisha.`)
-          return
-        }
-        if (!/^\d{6}$/.test(otp.trim())) {
-          setError('OTP lazima iwe na tarakimu 6.')
-          return
-        }
-        const { data, error: verifyError } = await supabase.auth.verifyOtp({
-          phone: normalizedPhone,
-          token: otp.trim(),
-          type: 'sms',
-        })
-        if (verifyError) {
-          setError(`OTP haikuthibitishwa: ${verifyError.message}`)
-          return
-        }
-        if (data.session) {
-          window.location.assign('/dashboard')
-          return
-        }
-        setError('OTP imepokelewa lakini session haikupatikana. Jaribu tena.')
-        return
       }
 
       if (mode === 'register') {
@@ -269,11 +209,6 @@ export default function AuthPage() {
               </p>
             </div>
 
-            <div className="mb-3 grid grid-cols-2 gap-2 rounded-xl border border-white/10 bg-black/20 p-1">
-              <button type="button" onClick={() => { setAuthMethod('email'); setOtpSent(false); setOtp(''); setError(null); setMessage(null) }} className={`rounded-lg px-3 py-2 text-xs font-bold transition ${authMethod === 'email' ? 'bg-emerald-400 text-emerald-950' : 'text-slate-300 hover:bg-white/5'}`}><Mail className="mr-1.5 inline h-3.5 w-3.5"/> Barua pepe</button>
-              <button type="button" onClick={() => { setAuthMethod('phone'); setError(null); setMessage(null) }} className={`rounded-lg px-3 py-2 text-xs font-bold transition ${authMethod === 'phone' ? 'bg-emerald-400 text-emerald-950' : 'text-slate-300 hover:bg-white/5'}`}><Phone className="mr-1.5 inline h-3.5 w-3.5"/> Simu + OTP</button>
-            </div>
-
             <form onSubmit={handleSubmit} className="space-y-3">
               {mode === 'register' && (
                 <div className="space-y-3 rounded-2xl border border-emerald-300/20 bg-emerald-950/25 p-3">
@@ -313,37 +248,23 @@ export default function AuthPage() {
                   <p className="px-1 text-[11px] leading-5 text-slate-400">Jaza jina lako kamili, kisha username ya kipekee. Shule/chuo ni lazima. Official Community ya shule/chuo chako ni ya wanafunzi walioweka taasisi hiyo; Maswali na Majibu na Study Groups zinabaki wazi kwa wanafunzi wote.</p>
                 </div>
               )}
-              {authMethod === 'email' ? (
-                <>
-                  <label className={inputWrap}>
-                    <Mail className="h-4 w-4 shrink-0 text-slate-400" />
-                    <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Barua pepe" autoComplete="email" className={inputBase} />
-                  </label>
-                  <label className={inputWrap}>
-                    <Lock className="h-4 w-4 shrink-0 text-slate-400" />
-                    <input type={showPassword ? 'text' : 'password'} required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Nywila (angalau herufi 8)" autoComplete={mode === 'login' ? 'current-password' : 'new-password'} className={inputBase} />
-                    <button type="button" onClick={() => setShowPassword((v) => !v)} aria-label={showPassword ? 'Ficha nywila' : 'Onyesha nywila'} className="text-slate-400 hover:text-white">
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </label>
-                </>
-              ) : (
-                <>
-                  {!otpSent ? (
-                    <label className={inputWrap}><Phone className="h-4 w-4 shrink-0 text-slate-400"/><input type="tel" required value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+255 712 345 678" autoComplete="tel" className={inputBase}/></label>
-                  ) : (
-                    <>
-                      <div className="rounded-xl border border-emerald-300/20 bg-emerald-500/10 px-3 py-3 text-xs text-emerald-100"><ShieldCheck className="mr-2 inline h-4 w-4"/> OTP imetumwa kwa {phone.trim()}</div>
-                      <label className={inputWrap}><Lock className="h-4 w-4 shrink-0 text-slate-400"/><input type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="Ingiza OTP ya tarakimu 6" className={`${inputBase} text-center tracking-[0.35em]`}/></label>
-                      <button type="button" disabled={loading} onClick={() => { setOtpSent(false); setOtp(''); setMessage(null) }} className="text-xs font-semibold text-emerald-300 hover:underline">Badili namba / tuma OTP tena</button>
-                    </>
-                  )}
-                </>
-              )}
+              <>
+                <label className={inputWrap}>
+                  <Mail className="h-4 w-4 shrink-0 text-slate-400" />
+                  <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Barua pepe" autoComplete="email" className={inputBase} />
+                </label>
+                <label className={inputWrap}>
+                  <Lock className="h-4 w-4 shrink-0 text-slate-400" />
+                  <input type={showPassword ? 'text' : 'password'} required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Nywila (angalau herufi 8)" autoComplete={mode === 'login' ? 'current-password' : 'new-password'} className={inputBase} />
+                  <button type="button" onClick={() => setShowPassword((v) => !v)} aria-label={showPassword ? 'Ficha nywila' : 'Onyesha nywila'} className="text-slate-400 hover:text-white">
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </label>
+              </>
 
               <button type="submit" disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-400 py-3 text-sm font-bold text-emerald-950 shadow-lg shadow-emerald-500/25 transition hover:from-emerald-400 hover:to-emerald-300 active:scale-[0.98] disabled:opacity-60">
                 {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-                {loading ? 'Subiri...' : authMethod === 'phone' ? (otpSent ? 'Thibitisha OTP' : 'Tuma OTP') : (mode === 'login' ? 'Ingia' : 'Jisajili')}
+                {loading ? 'Subiri...' : (mode === 'login' ? 'Ingia' : 'Jisajili')}
               </button>
             </form>
 
@@ -361,7 +282,7 @@ export default function AuthPage() {
 
             <button
               type="button"
-              onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setOtpSent(false); setOtp(''); setError(null); setMessage(null) }}
+              onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(null); setMessage(null) }}
               className="mt-6 w-full text-center text-sm text-slate-300"
             >
               {mode === 'login' ? 'Huna akaunti? ' : 'Una akaunti tayari? '}
