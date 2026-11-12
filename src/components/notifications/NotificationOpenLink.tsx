@@ -32,10 +32,10 @@ export default function NotificationOpenLink({ id, href, read, title, className,
         .update({ is_read: true, read_at: new Date().toISOString() })
         .eq('id', id)
         .eq('user_id', user.id)
-        .select('id')
+        .select('id,is_read,read_at')
         .maybeSingle()
       if (updateError) throw updateError
-      if (!data) throw new Error('Taarifa haikuweza kuwekwa kuwa imesomwa. Hakiki ruhusa ya akaunti kisha ujaribu tena.')
+      if (!data || data.is_read !== true || !data.read_at) throw new Error('Taarifa haikuweza kuthibitishwa kuwa imesomwa. Hakiki ruhusa ya akaunti kisha ujaribu tena.')
       router.push(href)
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Imeshindikana kuweka taarifa kuwa imesomwa.')
