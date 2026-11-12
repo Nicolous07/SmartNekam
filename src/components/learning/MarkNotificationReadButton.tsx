@@ -1,14 +1,12 @@
 'use client'
 import { useState } from 'react'
 import { Check, Loader2 } from 'lucide-react'
-import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 export default function MarkNotificationReadButton({ id }: { id: string }) {
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState(false)
   const [error, setError] = useState('')
-  const router = useRouter()
 
   async function markRead() {
     if (busy || done) return
@@ -23,12 +21,13 @@ export default function MarkNotificationReadButton({ id }: { id: string }) {
         .update({ is_read: true, read_at: new Date().toISOString() })
         .eq('id', id)
         .eq('user_id', user.id)
-        .select('id')
+        .select('id,is_read,read_at')
         .maybeSingle()
       if (updateError) throw updateError
-      if (!data) throw new Error('Taarifa haikuweza kuwekwa kuwa imesomwa. Jaribu tena.')
+      if (!data || data.is_read !== true || !data.read_at) throw new Error('Taarifa haikuweza kuthibitishwa kuwa imesomwa. Jaribu tena.')
       setDone(true)
-      router.refresh()
+      // Force a fresh server read so the unread count and row style cannot remain stale.
+      window.location.reload()
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Imeshindikana kuweka taarifa kuwa imesomwa.')
     } finally {
