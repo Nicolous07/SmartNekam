@@ -557,9 +557,10 @@ html.amoled {
   color: var(--sn-text);
 }
 .sn-mobile-nav-create .sn-mobile-nav-icon {
-  top: -11px;
+  top: 50%;
   width: 39px;
   height: 39px;
+  transform: translate(-50%, -50%);
   background: linear-gradient(125deg, #4F7CFF 0%, #6F68F5 54%, #8B5CF6 100%);
   color: #FFFFFF;
   box-shadow: 0 0 0 5px var(--sn-nav-rail-bg), 0 8px 24px rgba(79, 124, 255, 0.30);
