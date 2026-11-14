@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowRight, GraduationCap, MapPin, MessageCircle, Users } fr
 import { createClient } from '@/lib/supabase/server'
 import PostCard, { type FeedPost } from './PostCard'
 import OpenPostComposerButton from './OpenPostComposerButton'
+import PostFeedMore from './PostFeedMore'
 
 type SuggestedUser = { user_id: string; full_name: string; username: string; avatar_url: string | null; role: string; can_message: boolean }
 type Institution = { id: string; name: string; region?: string | null; country?: string | null }
@@ -51,7 +52,7 @@ export default async function PostFeed({ lowDataMode = true }: { lowDataMode?: b
   const { data: { user } } = await supabase.auth.getUser()
 
   const [feedResult, peopleResult, schoolsResult, universitiesResult, groupsResult, promotionsResult] = await Promise.all([
-    supabase.from('posts_feed').select('id, author_id, category, subject, content, image_url, created_at, author_name, author_username, author_avatar, author_role, like_count, comment_count, share_count, liked_by_me, is_anonymous, attachments, author_follower_count, following_author_by_me').order('created_at', { ascending: false }).limit(lowDataMode ? 8 : 20),
+    supabase.from('posts_feed').select('id, author_id, category, subject, content, image_url, created_at, author_name, author_username, author_avatar, author_role, like_count, comment_count, share_count, liked_by_me, is_anonymous, attachments, author_follower_count, following_author_by_me').order('created_at', { ascending: false }).order('id', { ascending: false }).limit(lowDataMode ? 8 : 20),
     user ? supabase.rpc('get_suggested_smartnekam_users', { p_limit: lowDataMode ? 3 : 6 }) : Promise.resolve({ data: [], error: null }),
     supabase.from('schools').select('id,name,region,country').order('name').limit(lowDataMode ? 1 : 3),
     supabase.from('universities').select('id,name,region,country').order('name').limit(lowDataMode ? 1 : 2),
@@ -104,6 +105,7 @@ export default async function PostFeed({ lowDataMode = true }: { lowDataMode?: b
     {posts.length === 0 && !feedError && <p className="geometric-card p-5 text-sm text-slate-500 dark:text-slate-400">Bado hakuna posts. Bonyeza kitufe cha (+) kuanza mjadala wa kwanza.</p>}
     {batches.map((batch, batchIndex) => <div key={`batch-${batchIndex}`} className="space-y-4">{batch.posts.map((post, i) => <PostCard key={post.id} post={post} index={batchIndex * 3 + i} viewerId={user?.id ?? null} />)}{renderDiscovery(batch.mode, `discovery-${batchIndex}`)}</div>)}
     {missingModes.map((mode, i) => renderDiscovery(mode, `discovery-extra-${i}`))}
+    {!feedError && basePosts.length > 0 && <PostFeedMore initialCursor={{ created_at: basePosts[basePosts.length - 1].created_at, id: basePosts[basePosts.length - 1].id }} initialHasMore={basePosts.length === (lowDataMode ? 8 : 20)} initialSeenIds={posts.map((post) => post.id)} pageSize={lowDataMode ? 8 : 20} />}
     <div className="flex justify-center pt-1"><OpenPostComposerButton label="Shiriki post yako"/></div>
   </section>
 }
