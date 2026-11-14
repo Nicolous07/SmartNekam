@@ -271,13 +271,13 @@ export default function AppNavbar({ profile, isAdmin = false }: { profile: NavPr
         </section>
       </div>}
 
-      <nav data-swipe-ignore="true" aria-label="Urambazaji wa simu" className={`fixed inset-x-3 bottom-[max(0.6rem,env(safe-area-inset-bottom))] z-40 mx-auto max-w-xl transition-transform duration-300 ease-out lg:hidden ${navHidden ? 'translate-y-[150%]' : 'translate-y-0'}`}>
+      <nav data-swipe-ignore="true" aria-label="Urambazaji wa simu" className={`fixed inset-x-5 bottom-[max(0.6rem,env(safe-area-inset-bottom))] z-40 mx-auto max-w-md transition-transform duration-300 ease-out lg:hidden ${navHidden ? 'translate-y-[150%]' : 'translate-y-0'}`}>
         <div className="sn-nav-rail sn-mobile-nav-grid rounded-[27px] shadow-[0_18px_45px_rgba(0,0,0,0.32)]">
           {ITEMS.slice(0, 2).map(({ href, label, icon: Icon }) => <Link key={href} href={href} aria-label={label} title={label} className={`sn-mobile-nav-item ${isActive(href) ? 'is-active' : ''}`}>
             <span className="sn-mobile-nav-icon"><Icon className="h-5 w-5" /></span><span className="sn-mobile-nav-label">{label}</span>
           </Link>)}
           <button type="button" onClick={() => setCreateOpen(true)} aria-label="Unda kitu kipya" title="Unda post au pakia nyenzo" className="sn-mobile-nav-item sn-mobile-nav-create">
-            <span className="sn-mobile-nav-icon"><Plus className="h-5 w-5" /></span><span className="sn-mobile-nav-label">Unda</span>
+            <span className="sn-mobile-nav-icon"><Plus className="h-5 w-5" /></span>
           </button>
           {ITEMS.slice(2, 4).map(({ href, label, icon: Icon }) => <Link key={href} href={href} aria-label={label} title={label} className={`sn-mobile-nav-item ${isActive(href) ? 'is-active' : ''}`}>
             <span className="sn-mobile-nav-icon"><Icon className="h-5 w-5" /></span><span className="sn-mobile-nav-label">{label}</span>
